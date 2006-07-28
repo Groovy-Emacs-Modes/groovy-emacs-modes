@@ -1,0 +1,10 @@
+This is a Groovy mode for (X)Emacs.
+
+This is a derived mode of Java mode which is itself a derived mode in CC Mode. Inspiration came
+from Dylan R.E. Moonfire's C# mode.
+
+Copyright (C) 2006 Russel Winder
+
+This software is licenced using GNU General Public Licence.
+
+Author:: Russel Winder
