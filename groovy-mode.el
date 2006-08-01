@@ -1,7 +1,7 @@
 ;;; groovy-mode.el --- Groovy mode derived mode
 
 ;;  Author: Russel Winder <russel@russel.org.uk>
-;;  Created: 2006-07-22
+;;  Created: 2006-08-01
 
 ;;  Copyright (C) 2006 Russel Winder
 
@@ -23,6 +23,8 @@
 ;;  source was used) and C# Mode from Dylan R. E. Moonfire <contact@mfgames.com> (the 0.5.0
 ;;  source was used).  This code may contain some code fragments from those sources that was
 ;;  cut-and-pasted then edited.  All other code is newly entered by the author.
+
+;; NB  This derived mode requires CC Mode 5.31 to work properly but for some reason crashes it :-(
 
 ;;; Bugs:
 ;;
@@ -181,16 +183,6 @@
 ;      ;; Sequence.
 ;      (left-assoc ",")))
 
-;;; Groovy allows operators to be overloaded like C++ and unlike Java.
-;(c-lang-defconst c-overloadable-operators
-;  groovy  '(	 "+" "-" "*" "/" "%"
-;                 "^" "&" "|" "~"
-;                 "!" "=" "<" ">" "+=" "-=" "*=" "/=" "%=" "^="
-;                 "&=" "|="
-;                 "<<" ">>" ">>=" "<<=" "==" "!=" "<=" ">="
-;                 ">>>="
-;                 "&&" "||" "++" "--"))
-
 ;; Groovy allows newline to terminate a statement unlike Java and like Awk.  We draw on the Awk
 ;; Mode `Virtual semicolon material.  The idea is to say when an EOL is a `virtual semicolon,
 ;; i.e. a statement terminator.
@@ -201,12 +193,22 @@
 (c-lang-defconst c-stmt-delim-chars-with-comma
                  groovy ";,{}\n\r")
 
-(defun c-groovy-at-vsemi-p () nil)
+(defun c-groovy-at-vsemi-p ()
+  (save-excursion
+    (let (current-position (point))
+      (forward-line 0)
+      (search-forward-regexp "[ \t]*")
+      (and (eq current-position (point))
+           (progn
+             (forward-line -1)
+             (end-of-line)
+             (search-backward-regexp "[^ \t]")
+             (or (eq (looking-at "\\([a-zA-Z0-9_]*\\|'\\|\"\\|]\\|)\\|->\\|[^+-/*=]\\)"))))))))
 
 (c-lang-defconst c-at-vsemi-p-fn
                  groovy 'c-groovy-at-vsemi-p)
 
-(defun c-groovy-vsemi-status-inknown-p () nil)
+(defun c-groovy-vsemi-status-unknown-p () nil)
 
 (c-lang-defconst c-vsemi-status-unknown-p-fn
                  groovy 'c-groovy-vsemi-status-unknown-p)
@@ -246,10 +248,12 @@
 
 ;;  Groovy can overload operators where Java cannot.
 (c-lang-defconst c-overloadable-operators
-                 groovy '("+" "-" "*" "/" "%" "&" "|" "^"
-                          "<<" ">>" ">>>" "==" "!=" ">" "<" ">=" "<="
-                          "+=" "-=" "*=" "/=" "&=" "|=" "^="
-                          "<<=" ">>=" ">>>="))
+                 groovy '("+" "-" "*" "/" "%"
+                          "&" "|" "^" "~" "<<" ">>" ">>>"
+                          "==" "!=" ">" "<" ">=" "<="
+                          "++" "--" "+=" "-=" "*=" "/=" "%="
+                          "&=" "|=" "^=" "~=" "<<=" ">>=" ">>>="
+                          "!" "&&" "||"))
 
 (defconst groovy-font-lock-keywords-1 (c-lang-const c-matchers-1 groovy)
   "Minimal highlighting for Groovy mode.
