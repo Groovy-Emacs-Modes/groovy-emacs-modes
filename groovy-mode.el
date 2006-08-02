@@ -24,7 +24,10 @@
 ;;  source was used).  This code may contain some code fragments from those sources that was
 ;;  cut-and-pasted then edited.  All other code is newly entered by the author.
 
-;; NB  This derived mode requires CC Mode 5.31 to work properly but for some reason crashes it :-(
+;; NB  This derived mode requires CC Mode 5.31 for the virtual semicolon code to work.
+
+;;  There appears to be a problem in CC Mode 5.31 such that csharp-mode and groovy-mode crash
+;;  XEmacs is the fiels are byte compiled.
 
 ;;; Bugs:
 ;;
@@ -80,7 +83,7 @@
     (load "cc-mode" nil t) ; C# mode has this
     (load "cc-fonts" nil t) ; C# mode has this
     (load "cc-langs" nil t) ; C# mode has this
-;    (load "cc-bytecomp" nil t) ; Awk mode has this
+    (load "cc-bytecomp" nil t) ; Awk mode has this
 ))
 
 (eval-and-compile
@@ -188,27 +191,46 @@
 ;; i.e. a statement terminator.
 
 (c-lang-defconst c-stmt-delim-chars
-                 groovy ";{}\n\r")
+                 groovy "^;{}\n\r?:")
 
 (c-lang-defconst c-stmt-delim-chars-with-comma
-                 groovy ";,{}\n\r")
+                 groovy "^;,{}\n\r?:")
 
-(defun c-groovy-at-vsemi-p ()
+;;  Is there a virtual semicolon at POS or point?
+;;
+;;  A virtual semicolon is considered to lie just after the last non-syntactic-whitespace
+;; character on a line where the EOL is the statement terminator.  A real semicolon never
+;; counts as a virtual one.
+(defun groovy-at-vsemi-p ( &optional pos )
   (save-excursion
-    (let (current-position (point))
-      (forward-line 0)
-      (search-forward-regexp "[ \t]*")
-      (and (eq current-position (point))
-           (progn
-             (forward-line -1)
-             (end-of-line)
-             (search-backward-regexp "[^ \t]")
-             (or (eq (looking-at "\\([a-zA-Z0-9_]*\\|'\\|\"\\|]\\|)\\|->\\|[^+-/*=]\\)"))))))))
+    (let ((pos-or-point (if pos (goto-char pos) (point))))
+      (if (eq pos-or-point (point-min))
+          nil
+        (and
+         (groovy-ws-or-comment-to-eol-p pos-or-point)
+         (groovy-not-in-expression-p pos-or-point)
+         (progn
+           (backward-char 1)
+           (not (equal (point) ";"))))))))
 
 (c-lang-defconst c-at-vsemi-p-fn
-                 groovy 'c-groovy-at-vsemi-p)
+                 groovy 'groovy-at-vsemi-p)
 
-(defun c-groovy-vsemi-status-unknown-p () nil)
+(defun groovy-ws-or-comment-to-eol-p ( pos )
+  (save-excursion
+    (goto-char pos)
+    (search-forward-regexp "[ \t]*")
+    (or
+     (equal (point) pos)
+     (equal (point) ?\n))))
+
+(defun groovy-not-in-expression-p ( pos )
+  (save-excursion
+    (goto-char pos)
+    (backward-char 1)
+    (not (looking-at "+-*/<>"))))
+
+(defun groovy-vsemi-status-unknown-p () nil)
 
 (c-lang-defconst c-vsemi-status-unknown-p-fn
                  groovy 'c-groovy-vsemi-status-unknown-p)
