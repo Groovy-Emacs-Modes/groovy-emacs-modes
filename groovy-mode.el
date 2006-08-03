@@ -207,11 +207,9 @@
       (if (eq pos-or-point (point-min))
           nil
         (and
+         (not (char= (char-before) ?\;))
          (groovy-ws-or-comment-to-eol-p pos-or-point)
-         (groovy-not-in-expression-p pos-or-point)
-         (progn
-           (backward-char 1)
-           (not (equal (point) ";"))))))))
+         (groovy-not-in-statement-p pos-or-point))))))
 
 (c-lang-defconst c-at-vsemi-p-fn
                  groovy 'groovy-at-vsemi-p)
@@ -219,16 +217,21 @@
 (defun groovy-ws-or-comment-to-eol-p ( pos )
   (save-excursion
     (goto-char pos)
-    (search-forward-regexp "[ \t]*")
-    (or
-     (equal (point) pos)
-     (equal (point) ?\n))))
+    (skip-chars-forward " \t")
+    (char= (char-after) ?\n)))
 
-(defun groovy-not-in-expression-p ( pos )
+(defun groovy-not-in-statement-p ( pos )
   (save-excursion
     (goto-char pos)
-    (backward-char 1)
-    (not (looking-at "+-*/<>"))))
+    (if (equal (point) (point-min))
+        nil
+      (backward-char 1)
+      (or
+       (not (looking-at "[=+*/%<]"))
+       (if (char= (char-after) ?>)
+           (if (equal (point) (point-min))
+               nil
+             (char= (char-before) ?-)))))))
 
 (defun groovy-vsemi-status-unknown-p () nil)
 
