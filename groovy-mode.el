@@ -5,29 +5,28 @@
 
 ;;  Copyright (C) 2006 Russel Winder
 
-;;  This program is free software; you can redistribute it and/or modify it under the terms of
-;;  the GNU General Public License as published by the Free Software Foundation; either version
-;;  2 of the License, or (at your option) any later version.
+;;  This program is free software; you can redistribute it and/or modify it under the terms of the GNU
+;;  General Public License as published by the Free Software Foundation; either version 2 of the License, or
+;;  (at your option) any later version.
 ;;
-;;  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-;;  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-;;  See the GNU General Public License for more details.
+;;  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even
+;;  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+;;  License for more details.
 ;;
-;;  You should have received a copy of the GNU General Public License along with this program;
-;;  if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-;;  Boston, MA 02110-1301 USA.
+;;  You should have received a copy of the GNU General Public License along with this program; if not, write
+;;  to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 ;;; Commentary:
 ;;
-;;  This mode was developed using the Java and Awk modes that are part of CC Mode (the 5.31
-;;  source was used) and C# Mode from Dylan R. E. Moonfire <contact@mfgames.com> (the 0.5.0
-;;  source was used).  This code may contain some code fragments from those sources that was
-;;  cut-and-pasted then edited.  All other code is newly entered by the author.
+;;  This mode was developed using the Java and Awk modes that are part of CC Mode (the 5.31 source was used)
+;;  and C# Mode from Dylan R. E. Moonfire <contact@mfgames.com> (the 0.5.0 source was used).  This code may
+;;  contain some code fragments from those sources that was cut-and-pasted then edited.  All other code is
+;;  newly entered by the author.
 
 ;; NB  This derived mode requires CC Mode 5.31 for the virtual semicolon code to work.
 
-;;  There appears to be a problem in CC Mode 5.31 such that csharp-mode and groovy-mode crash
-;;  XEmacs is the fiels are byte compiled.
+;;  There appears to be a problem in CC Mode 5.31 such that csharp-mode and groovy-mode crash XEmacs is the
+;;  files are byte compiled.
 
 ;;; Bugs:
 ;;
@@ -37,43 +36,47 @@
 ;;    0.1.0 - will be the initial release when it is ready :-)
 ;;
 
+;;;;  $LastChangedRevision$ $LastChangedDate$
+
 ;;; Notes:
 
-;;  Sort out how to get EOL to be a (context sensitive) statement terminator.  Awk mode has
-;;  infrastructure for this.
+;;  Need to think about the `*.', `?.', `.&' and `.@' operators.  Also, `..' and `..<'.  This probably means
+;;  changing `c-after-id-concat-ops' but also `c-operators'.
 
-;;  Need to think about the `.*', `.?' and `.@' operators.  THis probably means changing
-;;  `c-after-id-concat-ops' but also `c-operators'.
+;;  Need to deal with operator overloading (groovy has this but Java does not) so `c-overloadable-operators'
+;;  needs investigating.
 
-;;  Need to deal with operator overloading (groovy has this but Java does not) so
-;;  `c-overloadable-operators' needs investigating.
+;;  Need to investigate how to support the triple string delimiters for multi-line strings.
 
-;;  Need to investigate how to support the triple string delimiters for multi-line strings. 
-
-;;  It is not clear whether Java mode supports Java 5.0 yet.  Annotations, generics, enums,
-;;  etc. are not properly handled.  Does Groovy need to worry about this?
+;;  Java mode does not support the new Java 5.0 features yet.  Annotations, generics, enums, etc. are not
+;;  properly handled.  JDE mode does support them though.
 
 ;;  Should we support GString / template markup ( e.g. `<%' and `%>') specially?
 
-;;  Need to support sqaure bracket indenting for list literals.
+;;  Need to support square bracket indenting for list literals.
 
-;;  Need to think whether Groovy needs a different c-decl-prefix-re compared to Java.
-;;  Certainly, Java will have to change to handle the generics.
+;;  Need to think whether Groovy needs a different c-decl-prefix-re compared to Java.  Certainly, Java will
+;;  have to change to handle the generics.
 
 ;;  Probably need to change `c-block-prefix-disallowed-chars' as Groovy is not the same as Java.
 
 ;;  Probably need to change `c-type-decl-suffix-key' as Groovy is not the same as Java.
 
-;;  Need to add the spaceship operator to the comparison operators.
+;;  Need to add the spaceship operator, `<=>', to the comparison operators.
 
+;;  Need to deal with `->' as the separator of parameters and code in a closure.  This is very different
+;;  from C++ and not in Java.
+
+;;  Need to sort out the closures as blocks -- there is no keyword to use to start these the prefix is one
+;;  of: function call, field reference or assignment.
 
 ;;; Code:
+
 (require 'cc-mode)
 
-;; CSharp mode comment says: These are only required at compile time to get the sources for the
-;; language constants.  (The cc-fonts require and the font-lock related constants could
-;; additionally be put inside an (eval-after-load "font-lock" ...) but then some trickery is
-;; necessary to get them compiled.)
+;; CSharp mode comment says: These are only required at compile time to get the sources for the language
+;; constants.  (The cc-fonts require and the font-lock related constants could additionally be put inside an
+;; (eval-after-load "font-lock" ...) but then some trickery is necessary to get them compiled.)
 (eval-when-compile
   (let ((load-path
 	 (if (and (boundp 'byte-compile-dest-file)
@@ -89,102 +92,125 @@
 (eval-and-compile
   (c-add-language 'groovy-mode 'java-mode))
 
-;; Groovy allows operators such as `.*', `.?' and `.@'.  Java mode puts `*' here to deal with
-;; import statement usage whcih we need for Groovy.
-;(c-lang-defconst c-after-id-concat-ops
-;  groovy '( "*" "?" "@" ))
+;;  Groovy allows `?.' as well as `.' for creating identifiers.
+(c-lang-defconst c-identifier-ops
+                 groovy '((left-assoc "." "?.")))
 
-;; Because of the above we have to redefine `c_operatos' because no other language has `.?' and
+;; Groovy allows operators such as `*.', `?.', `.&' and `.@'.  Java mode puts `*' here to deal with
+;; import statement usage which we need for Groovy.
+(c-lang-defconst c-after-id-concat-ops
+  groovy '( "*" "&" "@" ))
+
+;;;;  Should really do something with `c-string-escaped-newlines' and `c-multiline-string-start-char' to
+;;;;  handle the triple delimeter multiline strings.
+
+;; Because of the above we have to redefine `c_operators' because no other language has `.&' and
 ;; `.@' operators.
-;(c-lang-defconst c-operators
 
-;  "List describing all operators, along with their precedence and
-;associativity.  The order in the list corresponds to the precedence of
-;the operators: The operators in each element is a group with the same
-;precedence, and the group has higher precedence than the groups in all
-;following elements.  The car of each element describes the type of of
-;the operator group, and the cdr is a list of the operator tokens in
-;it.  The operator group types are:
+(c-lang-defconst c-operators
+  "List describing all operators, along with their precedence and
+associativity.  The order in the list corresponds to the precedence of
+the operators: The operators in each element is a group with the same
+precedence, and the group has higher precedence than the groups in all
+following elements.  The car of each element describes the type of of
+the operator group, and the cdr is a list of the operator tokens in
+it.  The operator group types are:
 
-;'prefix         Unary prefix operators.
-;'postfix        Unary postfix operators.
-;'postfix-if-paren
-;		Unary postfix operators if and only if the chars have
-;		parenthesis syntax.
-;'left-assoc     Binary left associative operators (i.e. a+b+c means (a+b)+c).
-;'right-assoc    Binary right associative operators (i.e. a=b=c means a=(b=c)).
-;'right-assoc-sequence
-;                Right associative operator that constitutes of a
-;                sequence of tokens that separate expressions.  All the
-;                tokens in the group are in this case taken as
-;                describing the sequence in one such operator, and the
-;                order between them is therefore significant.
+'prefix         Unary prefix operators.
+'postfix        Unary postfix operators.
+'postfix-if-paren
+		Unary postfix operators if and only if the chars have
+		parenthesis syntax.
+'left-assoc     Binary left associative operators (i.e. a+b+c means (a+b)+c).
+'right-assoc    Binary right associative operators (i.e. a=b=c means a=(b=c)).
+'right-assoc-sequence
+                Right associative operator that constitutes of a
+                sequence of tokens that separate expressions.  All the
+                tokens in the group are in this case taken as
+                describing the sequence in one such operator, and the
+                order between them is therefore significant.
 
-;Operators containing a character with paren syntax are taken to match
-;with a corresponding open/close paren somewhere else.  A postfix
-;operator with close paren syntax is taken to end a postfix expression
-;started somewhere earlier, rather than start a new one at point.  Vice
-;versa for prefix operators with open paren syntax.
+Operators containing a character with paren syntax are taken to match
+with a corresponding open/close paren somewhere else.  A postfix
+operator with close paren syntax is taken to end a postfix expression
+started somewhere earlier, rather than start a new one at point.  Vice
+versa for prefix operators with open paren syntax.
 
-;Note that operators like \".\" and \"->\" which in language references
-;often are described as postfix operators are considered binary here,
-;since CC Mode treats every identifier as an expression."
+Note that operators like \".\" and \"->\" which in language references
+often are described as postfix operators are considered binary here,
+since CC Mode treats every identifier as an expression."
 
-;  groovy `(
-;      ;; Primary.
-;      ;,@(c-lang-const c-identifier-ops)
-;      ;,@((postfix-if-paren "<" ">") ; Templates.
-;      ;   (prefix "super"))
+  groovy `(
+           ;; Primary.
+           ,@(c-lang-const c-identifier-ops)
+             
+             (postfix-if-paren "<" ">") ; Templates.
+             
+             (prefix "super")
+             
+             ;; Postfix.
+             (left-assoc "." "*." "?." ".&" ".@")
+             
+             (postfix "++" "--" "[" "]" "(" ")" "<:" ":>")
+             
+             ;; Unary.
+             (prefix "++" "--" "+" "-" "!" "~" "new" "(" ")")
+             
+             ;; Multiplicative.
+             (left-assoc "*" "/" "%")
+             
+             ;; Additive.
+             (left-assoc "+" "-")
+             
+             ;; Shift.
+             (left-assoc "<<" ">>" ">>>")
+             
+             ;; Relational.
+             (left-assoc "<" ">" "<=" ">=" "instanceof" "<=>")
+             
+             ;; Matching.
+             (left-assoc "=~" "==~" )
 
-;      ;; Postfix.
-;      (left-assoc "." ".*" ".?" ".@")
+             ;; Equality.
+             (left-assoc "==" "!=" )
+             
+             ;; Bitwise and.
+             (left-assoc "&")
+             
+             ;; Bitwise exclusive or.
+             (left-assoc "^")
+             
+             ;; Bitwise or.
+             (left-assoc "|")
+             
+             ;; Logical and.
+             (left-assoc "&&")
+             
+             ;; Logical or.
+             (left-assoc "||")
+             
+             ;; Conditional.
+             (right-assoc-sequence "?" ":")
+             
+             ;; Assignment.
+             (right-assoc ,@(c-lang-const c-assignment-operators))
+             
+             ;; Exception.
+             ;(prefix "throw") ; Java mode didn't have this but c++ mode does.  Humm...
+             
+             ;; Sequence.
+             (left-assoc ",")))
 
-;      (postfix "++" "--" "[" "]" "(" ")" "<:" ":>")
-
-;      ;; Unary.
-;      (prefix "++" "--" "+" "-" "!" "~" "new")
-
-;      ;; Multiplicative.
-;      (left-assoc "*" "/" "%")
-
-;      ;; Additive.
-;      (left-assoc "+" "-")
-
-;      ;; Shift.
-;      (left-assoc "<<" ">>" ">>>")
-
-;      ;; Relational.
-;      (left-assoc "<" ">" "<=" ">=" "instanceof")
-
-;      ;; Equality.
-;      (left-assoc "==" "!=")
-
-;      ;; Bitwise and.
-;      (left-assoc "&")
-
-;      ;; Bitwise exclusive or.
-;      (left-assoc "^")
-
-;      ;; Bitwise or.
-;      (left-assoc "|")
-
-;      ;; Logical and.
-;      (left-assoc "&&")
-
-;      ;; Logical or.
-;      (left-assoc "||")
-
-;      ;; Conditional.
-;      (right-assoc-sequence "?" ":")
-
-;      ;; Assignment.
-;      (right-assoc ,@(c-lang-const c-assignment-operators))
-
-;      ;; Exception.
-;      (prefix "throw") ; Java mode didn't have this but c++ mode does.  Humm...
-
-;      ;; Sequence.
-;      (left-assoc ",")))
+;;  Groovy can overload operators where Java cannot.
+(c-lang-defconst c-overloadable-operators
+                 groovy '("+" "-" "*" "/" "%"
+                          "&" "|" "^" "~" "<<" ">>" ">>>"
+                          "==" "!=" ">" "<" ">=" "<="
+                          "<=>"
+                          "=~" "==~" 
+                          "++" "--" "+=" "-=" "*=" "/=" "%="
+                          "&=" "|=" "^=" "~=" "<<=" ">>=" ">>>="
+                          "!" "&&" "||"))
 
 ;; Groovy allows newline to terminate a statement unlike Java and like Awk.  We draw on the Awk
 ;; Mode `Virtual semicolon material.  The idea is to say when an EOL is a `virtual semicolon,
@@ -238,27 +264,38 @@
 (c-lang-defconst c-vsemi-status-unknown-p-fn
                  groovy 'c-groovy-vsemi-status-unknown-p)
 
+
+;;  Java does not do this but perhaps it should?
+(c-lang-defconst c-type-modifier-kwds
+                 groovy '("volatile" "transient"))
+
+(c-lang-defconst c-typeless-decl-kwds
+                 groovy (append (c-lang-const c-class-decl-kwds)
+                                (c-lang-const c-brace-list-decl-kwds)
+                                '("def")))
+
+;;;;  Should we be tinkering with `c-block-stmt-1-key' or `c-block-stmt-2-key' to deal with closures
+;;;;  following what appears to be function calls or even field names?
+
 ;; Groovy allows use of `<%' and `%>' in template expressions.
 ;(c-lang-defconst c-other-op-syntax-tokens
 ;  groovy '( "<%" "%>" ))
 
-;; Groovy does not allow the full set of Java words in category and, of course, there is the
+;; Groovy does not allow the full set of Java keywords in the moifier category and, of course, there is the
 ;; `def' modifier which Groovy introduces to support dynamic typing.  Should `const' be treated
-;; as reserved here as it is in Java.
+;; as reserved here as it is in Java?
 (c-lang-defconst c-modifier-kwds
                  groovy '( "abstract" "def" "final" "private" "protected" "public" "static" "synchronized" ))
 
 ;;  Java does not define these pseudo-kewords as keywords, why not?
 
-;; Constant keywords
-;(c-lang-defconst c-constant-kwds
-;  groovy '( "true" "false" "null" ))
+(c-lang-defconst c-constant-kwds
+  groovy '( "true" "false" "null" ))
 
 ;;  Why does Java mode not put `super' into the `c-primary-expr-kwds?
 
-;; Keywords that start "primary expressions."
-;(c-lang-defconst c-primary-expr-kwds
-;  groovy '( "this" "super" ))
+(c-lang-defconst c-primary-expr-kwds
+  groovy '( "this" "super" ))
 
 ;;  Groovy does not allow anonymous classes as Java does.
 (c-lang-defconst c-inexpr-class-kwds
@@ -267,18 +304,13 @@
 (c-lang-defconst c-inexpr-brace-list-kwds
                  groovy nil)
 
+;;;;  Should we be changing `c-opt-inexpr-brace-list-key' to deal with closures after function calls and
+;;;;  field expressions?
+
 ;; We need to include the "as" for the cast and "in" for for.
 (c-lang-defconst c-other-kwds
                  groovy '( "in" "as" ))
 
-;;  Groovy can overload operators where Java cannot.
-(c-lang-defconst c-overloadable-operators
-                 groovy '("+" "-" "*" "/" "%"
-                          "&" "|" "^" "~" "<<" ">>" ">>>"
-                          "==" "!=" ">" "<" ">=" "<="
-                          "++" "--" "+=" "-=" "*=" "/=" "%="
-                          "&=" "|=" "^=" "~=" "<<=" ">>=" ">>>="
-                          "!" "&&" "||"))
 
 (defconst groovy-font-lock-keywords-1 (c-lang-const c-matchers-1 groovy)
   "Minimal highlighting for Groovy mode.
