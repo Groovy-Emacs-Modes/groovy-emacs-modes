@@ -207,7 +207,7 @@
       (if (eq pos-or-point (point-min))
           nil
         (and
-         (not (char= (char-before) ?\;))
+         (not (char-equal (char-before) ?\;))
          (groovy-ws-or-comment-to-eol-p pos-or-point)
          (groovy-not-in-statement-p pos-or-point))))))
 
@@ -218,7 +218,7 @@
   (save-excursion
     (goto-char pos)
     (skip-chars-forward " \t")
-    (char= (char-after) ?\n)))
+    (char-equal (char-after) ?\n)))
 
 (defun groovy-not-in-statement-p ( pos )
   (save-excursion
@@ -228,10 +228,10 @@
       (backward-char 1)
       (or
        (not (looking-at "[=+*/%<]"))
-       (if (char= (char-after) ?>)
+       (if (char-equal (char-after) ?>)
            (if (equal (point) (point-min))
                nil
-             (char= (char-before) ?-)))))))
+             (char-equal (char-before) ?-)))))))
 
 (defun groovy-vsemi-status-unknown-p () nil)
 
