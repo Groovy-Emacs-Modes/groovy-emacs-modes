@@ -199,7 +199,11 @@ since CC Mode treats every identifier as an expression."
              ;(prefix "throw") ; Java mode didn't have this but c++ mode does.  Humm...
              
              ;; Sequence.
-             (left-assoc ",")))
+             (left-assoc ",")
+
+             ;; Separator for parameter list and code in a closure.
+             (left-assoc "->")
+             ))
 
 ;;  Groovy can overload operators where Java cannot.
 (c-lang-defconst c-overloadable-operators
