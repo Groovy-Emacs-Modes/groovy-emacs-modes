@@ -244,11 +244,14 @@ since CC Mode treats every identifier as an expression."
 (c-lang-defconst c-at-vsemi-p-fn
                  groovy 'groovy-at-vsemi-p)
 
+;; see if end of line or comment on rest of line
 (defun groovy-ws-or-comment-to-eol-p ( pos )
   (save-excursion
     (goto-char pos)
     (skip-chars-forward " \t")
-    (char-equal (char-after) ?\n)))
+       (or
+        (char-equal (char-after) ?\n)
+        (looking-at "/[/*].*"))))
 
 (defun groovy-not-in-statement-p ( pos )
   (save-excursion
