@@ -3,7 +3,7 @@
 ;;  Author: Russel Winder <russel@russel.org.uk>
 ;;  Created: 2006-08-01
 
-;;  Copyright (C) 2006 Russel Winder
+;;  Copyright (C) 2006,2009 Russel Winder
 
 ;;  This program is free software; you can redistribute it and/or modify it under the terms of the GNU
 ;;  General Public License as published by the Free Software Foundation; either version 2 of the License, or
@@ -18,57 +18,60 @@
 
 ;;; Commentary:
 ;;
-;;  This mode was developed using the Java and Awk modes that are part of CC Mode (the 5.31 source was used)
-;;  and C# Mode from Dylan R. E. Moonfire <contact@mfgames.com> (the 0.5.0 source was used).  This code may
-;;  contain some code fragments from those sources that was cut-and-pasted then edited.  All other code is
-;;  newly entered by the author.
-
-;; NB  This derived mode requires CC Mode 5.31 for the virtual semicolon code to work.
-
-;;  There appears to be a problem in CC Mode 5.31 such that csharp-mode and groovy-mode crash XEmacs is the
-;;  files are byte compiled.
+;;  This mode was initially developed using the Java and Awk modes that are part of CC Mode (the 5.31 source
+;;  was used) and C# Mode from Dylan R. E. Moonfire <contact@mfgames.com> (the 0.5.0 source was used).  This
+;;  code may contain some code fragments from those sources that was cut-and-pasted then edited.  All other
+;;  code was newly entered by the author.  Obviously changes have been made since then.
+;;
+;; NB  This derived mode requires CC Mode 5.31 or later for the virtual semicolon code to work.
+;;
+;;  There appears to be a problem in CC Mode 5.31 such that csharp-mode and groovy-mode crash XEmacs 21.4 if
+;;  the files are byte compiled.
 
 ;;; Bugs:
 ;;
+;;  Bug tracking is currently (2009-11-26) handled using the Groovy JIRA via the Emacs Mode component.
+;;  cf. http://jira.codehaus.org/browse/GROOVY/component/14245
 
 ;;; Versions:
 ;;
 ;;    0.1.0 - will be the initial release when it is ready :-)
-;;
-
-;;;;  $LastChangedRevision$ $LastChangedDate$
 
 ;;; Notes:
-
+;;
 ;;  Need to think about the `*.', `?.', `.&' and `.@' operators.  Also, `..' and `..<'.  This probably means
 ;;  changing `c-after-id-concat-ops' but also `c-operators'.
-
+;;
 ;;  Need to deal with operator overloading (groovy has this but Java does not) so `c-overloadable-operators'
 ;;  needs investigating.
-
+;;
 ;;  Need to investigate how to support the triple string delimiters for multi-line strings.
-
+;;
 ;;  Java mode does not support the new Java 5.0 features yet.  Annotations, generics, enums, etc. are not
 ;;  properly handled.  JDE mode does support them though.
-
+;;
 ;;  Should we support GString / template markup ( e.g. `<%' and `%>') specially?
-
+;;
 ;;  Need to support square bracket indenting for list literals.
-
+;;
 ;;  Need to think whether Groovy needs a different c-decl-prefix-re compared to Java.  Certainly, Java will
 ;;  have to change to handle the generics.
-
+;;
 ;;  Probably need to change `c-block-prefix-disallowed-chars' as Groovy is not the same as Java.
-
+;;
 ;;  Probably need to change `c-type-decl-suffix-key' as Groovy is not the same as Java.
-
+;;
 ;;  Need to add the spaceship operator, `<=>', to the comparison operators.
-
+;;
 ;;  Need to deal with `->' as the separator of parameters and code in a closure.  This is very different
 ;;  from C++ and not in Java.
-
+;;
 ;;  Need to sort out the closures as blocks -- there is no keyword to use to start these the prefix is one
-;;  of: function call, field reference or assignment.
+;;  of: function call, field reference, or assignment.
+
+;;;  Changes:
+;;
+;;  Jim Morris' proposed solution to GROOVY-3899 merged 2009-11-26 09:06+00:00
 
 ;;; Code:
 
