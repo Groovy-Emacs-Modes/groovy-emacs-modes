@@ -409,7 +409,14 @@ Key bindings:
   ;;(easy-menu-add groovy-menu)
   ;;(cc-imenu-init cc-imenu-groovy-generic-expression)
   (c-run-mode-hooks 'c-mode-common-hook 'groovy-mode-hook)
+
+  ;; quick fix for misalignment of statements with =
+  (setq c-label-minimum-indentation 0)
+  (c-set-offset 'topmost-intro-cont 0)
+  (c-set-offset 'statement-cont 0)
+
   (c-update-modeline))
+
 
 (provide 'groovy-mode)
 
