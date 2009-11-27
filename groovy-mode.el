@@ -386,6 +386,23 @@ need for `java-font-lock-extra-types'.")
   :type 'hook
   :group 'c)
 
+
+;;; The following are used to overide cc-mode indentation behavior to match groovy
+
+;; if we are in a brace-list-entry (which in groovy is probably a
+;; closure) and fist list entry ends with -> (excluding comment) then
+;; change indent else lineup with previous one
+(defun groovy-mode-fix-brace-list (langelem)
+  (save-excursion
+	(let* ((ankpos (cdr langelem)) ; position of anchor element
+		   (curcol (progn (goto-char ankpos)
+                          (current-indentation))))
+	  (if (search-forward "->" (c-point 'eol) t)      ; if the line has a -> in it 
+		  (vector (+ curcol c-indent-level))          ; then indent from base
+		0))
+	))
+
+
 ;;; The entry point into the mode
 (defun groovy-mode ()
   "Major mode for editing Groovy code.
@@ -414,6 +431,8 @@ Key bindings:
   (setq c-label-minimum-indentation 0)
   (c-set-offset 'topmost-intro-cont 0)
   (c-set-offset 'statement-cont 0)
+  ;; fix for indentation after a closure param list
+  (c-set-offset 'brace-list-entry 'groovy-mode-fix-brace-list)
 
   (c-update-modeline))
 
