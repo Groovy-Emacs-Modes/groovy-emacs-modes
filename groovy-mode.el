@@ -363,16 +363,13 @@ need for `java-font-lock-extra-types'.")
     ("catch" "catch" c-electric-continued-statement 0)
     ("finally" "finally" c-electric-continued-statement 0)))
 
-(defvar groovy-mode-map ()
+(defvar groovy-mode-map (let ((map (c-make-inherited-keymap)))
+                                                  ;; Add bindings which are only useful for Groovy
+                                                  map)
   "Keymap used in groovy-mode buffers.")
-(if groovy-mode-map
-    nil
-  (setq groovy-mode-map (c-make-inherited-keymap))
-  ;; add bindings which are only useful for Java
-  )
 
 ;(easy-menu-define c-groovy-menu groovy-mode-map "Groovy Mode Commands"
-;		  (cons "Groovy" (c-lang-const c-mode-menu groovy)))
+;                 (cons "Groovy" (c-lang-const c-mode-menu groovy)))
 
 ;;; Autoload mode trigger
 ;(add-to-list 'auto-mode-alist '("\\.groovy" . groovy-mode))
@@ -391,13 +388,13 @@ need for `java-font-lock-extra-types'.")
 ;; change indent else lineup with previous one
 (defun groovy-mode-fix-brace-list (langelem)
   (save-excursion
-	(let* ((ankpos (cdr langelem)) ; position of anchor element
-		   (curcol (progn (goto-char ankpos)
+        (let* ((ankpos (cdr langelem)) ; position of anchor element
+                   (curcol (progn (goto-char ankpos)
                           (current-indentation))))
-	  (if (search-forward "->" (c-point 'eol) t)      ; if the line has a -> in it 
-		  (vector (+ curcol c-basic-offset))          ; then indent from base
-		0))
-	))
+          (if (search-forward "->" (c-point 'eol) t)      ; if the line has a -> in it 
+                  (vector (+ curcol c-basic-offset))          ; then indent from base
+                0))
+        ))
 
 
 ;;; The entry point into the mode
@@ -432,7 +429,6 @@ Key bindings:
   (c-set-offset 'brace-list-entry 'groovy-mode-fix-brace-list)
 
   (c-update-modeline))
-
 
 (provide 'groovy-mode)
 
