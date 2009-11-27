@@ -395,7 +395,7 @@ need for `java-font-lock-extra-types'.")
 		   (curcol (progn (goto-char ankpos)
                           (current-indentation))))
 	  (if (search-forward "->" (c-point 'eol) t)      ; if the line has a -> in it 
-		  (vector (+ curcol groovy-indent-level))     ; then indent from base
+		  (vector (+ curcol c-basic-offset))          ; then indent from base
 		0))
 	))
 
