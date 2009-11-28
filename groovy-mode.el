@@ -419,6 +419,21 @@ need for `java-font-lock-extra-types'.")
         (vector (current-column))))))
 
 
+;; To allow imneu to find methods and closures assigned to variables
+(defvar cc-imenu-groovy-generic-expression
+  `((nil
+     ,(concat
+       "[" c-alpha "_][\]\[." c-alnum "_]+[ \t\n\r]+" ; type spec
+       "\\([" c-alpha "_][" c-alnum "_]+\\)" ; method name
+       "[ \t\n\r]*"
+       ;; An argument list that is either empty or contains pretty much anything
+       "(.*)[ \t\n\r]*{"
+	   ) 1)
+
+	("*Closures*" "def[ \t]+\\([a-zA-Z_][a-zA-Z0-9_]*\\)[ \t]*=[ \t]*{" 1)
+	)
+  "Imenu generic expression for Groovy mode.  See `imenu-generic-expression'.")
+
 
 ;;; The entry point into the mode
 (defun groovy-mode ()
@@ -441,7 +456,7 @@ Key bindings:
   (c-init-language-vars groovy-mode)
   (c-common-init 'groovy-mode)
   ;;(easy-menu-add groovy-menu)
-  ;;(cc-imenu-init cc-imenu-groovy-generic-expression)
+  (cc-imenu-init cc-imenu-groovy-generic-expression)
   (c-run-mode-hooks 'c-mode-common-hook 'groovy-mode-hook)
 
   ;; quick fix for misalignment of statements with =
