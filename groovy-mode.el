@@ -366,16 +366,24 @@ need for `java-font-lock-extra-types'.")
     ("catch" "catch" c-electric-continued-statement 0)
     ("finally" "finally" c-electric-continued-statement 0)))
 
+;;  Jim Morris proposed changing to the following definition of groovy-mode-map 2009-11-27, but this change
+;;  has not made so as to continue to use the same code structure as still used in the Java mode.
+
+;(defvar groovy-mode-map (let ((map (c-make-inherited-keymap)))
+;                                                  ;; Add bindings which are only useful for Groovy
+;                                                  map)
+;  "Keymap used in groovy-mode buffers.")
+
 (defvar groovy-mode-map ()
   "Keymap used in groovy-mode buffers.")
 (if groovy-mode-map
     nil
   (setq groovy-mode-map (c-make-inherited-keymap))
-  ;; add bindings which are only useful for Java
+  ;; add bindings which are only useful for Groovy
   )
 
 ;(easy-menu-define c-groovy-menu groovy-mode-map "Groovy Mode Commands"
-;		  (cons "Groovy" (c-lang-const c-mode-menu groovy)))
+;                (cons "Groovy" (c-lang-const c-mode-menu groovy)))
 
 ;;; Autoload mode trigger
 ;(add-to-list 'auto-mode-alist '("\\.groovy" . groovy-mode))
@@ -394,13 +402,35 @@ need for `java-font-lock-extra-types'.")
 ;; change indent else lineup with previous one
 (defun groovy-mode-fix-brace-list (langelem)
   (save-excursion
-	(let* ((ankpos (cdr langelem)) ; position of anchor element
-		   (curcol (progn (goto-char ankpos)
+    (let* ((ankpos (cdr langelem)) ; position of anchor element
+           (curcol (progn (goto-char ankpos)
                           (current-indentation))))
-	  (if (search-forward "->" (c-point 'eol) t)      ; if the line has a -> in it 
-		  (vector (+ curcol c-basic-offset))          ; then indent from base
-		0))
-	))
+      (if (search-forward "->" (c-point 'eol) t)      ; if the line has a -> in it 
+          (vector (+ curcol c-basic-offset))          ; then indent from base
+        0))
+    ))
+
+;; A helper function from: http://mihai.bazon.net/projects/emacs-javascript-mode/javascript.el
+;; Originally named js-lineup-arglist, renamed to groovy-lineup-arglist
+(defun groovy-lineup-arglist (langelem)
+  ;; the "DWIM" in c-mode doesn't Do What I Mean.
+  ;; see doc of c-lineup-arglist for why I redefined this
+  (save-excursion
+    (let ((indent-pos (point)))
+      ;; Normal case.  Indent to the token after the arglist open paren.
+      (goto-char (c-langelem-2nd-pos c-syntactic-element))
+      (if (and c-special-brace-lists
+               (c-looking-at-special-brace-list))
+          ;; Skip a special brace list opener like "({".
+          (progn (c-forward-token-2)
+                 (forward-char))
+        (forward-char))
+      (let ((arglist-content-start (point)))
+        (c-forward-syntactic-ws)
+        (when (< (point) indent-pos)
+          (goto-char arglist-content-start)
+          (skip-chars-forward " \t"))
+        (vector (current-column))))))
 
 
 ;;; The entry point into the mode
@@ -433,6 +463,12 @@ Key bindings:
   (c-set-offset 'statement-cont 0)
   ;; fix for indentation after a closure param list
   (c-set-offset 'brace-list-entry 'groovy-mode-fix-brace-list)
+
+  ;; get arglists (in groovy lists or maps) to align properly
+  (c-set-offset 'arglist-close '(c-lineup-close-paren))
+  (c-set-offset 'arglist-cont 0)
+  (c-set-offset 'arglist-cont-nonempty '(groovy-lineup-arglist))
+  (c-set-offset 'arglist-intro '+)
 
   (c-update-modeline))
 
