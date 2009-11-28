@@ -16,6 +16,11 @@
 ;;  You should have received a copy of the GNU General Public License along with this program; if not, write
 ;;  to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+;;; Authors:
+;;
+;;  Russel Winder <russel.winder@concertant.com>, 2006--
+;;  Jim Morris, 2009--
+
 ;;; Commentary:
 ;;
 ;;  This mode was initially developed using the Java and Awk modes that are part of CC Mode (the 5.31 source
@@ -47,9 +52,6 @@
 ;;
 ;;  Need to investigate how to support the triple string delimiters for multi-line strings.
 ;;
-;;  Java mode does not support the new Java 5.0 features yet.  Annotations, generics, enums, etc. are not
-;;  properly handled.  JDE mode does support them though.
-;;
 ;;  Should we support GString / template markup ( e.g. `<%' and `%>') specially?
 ;;
 ;;  Need to support square bracket indenting for list literals.
@@ -61,17 +63,12 @@
 ;;
 ;;  Probably need to change `c-type-decl-suffix-key' as Groovy is not the same as Java.
 ;;
-;;  Need to add the spaceship operator, `<=>', to the comparison operators.
-;;
-;;  Need to deal with `->' as the separator of parameters and code in a closure.  This is very different
-;;  from C++ and not in Java.
-;;
 ;;  Need to sort out the closures as blocks -- there is no keyword to use to start these the prefix is one
 ;;  of: function call, field reference, or assignment.
 
 ;;;  Changes:
 ;;
-;;  Jim Morris' proposed solution to GROOVY-3899 merged 2009-11-26 09:06+00:00
+;;  See the history in the Bazaar branch.
 
 ;;; Code:
 
