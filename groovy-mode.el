@@ -274,7 +274,8 @@ since CC Mode treats every identifier as an expression."
 	(back-to-indentation)
 	(not
 	 (or (looking-at c-block-stmt-1-key)
-		 (looking-at c-block-stmt-2-key)))))
+		 (looking-at c-block-stmt-2-key)
+		 (looking-at "}?else")))))
 
 (defun groovy-vsemi-status-unknown-p () nil)
 
