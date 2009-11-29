@@ -233,13 +233,14 @@ since CC Mode treats every identifier as an expression."
 ;; counts as a virtual one.
 (defun groovy-at-vsemi-p ( &optional pos )
   (save-excursion
-    (let ((pos-or-point (if pos (goto-char pos) (point))))
-      (if (eq pos-or-point (point-min))
-          nil
-        (and
-         (not (char-equal (char-before) ?\;))
-         (groovy-ws-or-comment-to-eol-p pos-or-point)
-         (groovy-not-in-statement-p pos-or-point))))))
+	(let ((pos-or-point (if pos (goto-char pos) (point))))
+	  (if (eq pos-or-point (point-min))
+		  nil
+		(and
+		 (not (char-equal (char-before) ?\;))
+		 (groovy-ws-or-comment-to-eol-p pos-or-point)
+		 (groovy-not-in-statement-p pos-or-point)
+		 (groovy-not-if-or-else-etc-p pos-or-point))))))
 
 (c-lang-defconst c-at-vsemi-p-fn
                  groovy 'groovy-at-vsemi-p)
@@ -265,6 +266,16 @@ since CC Mode treats every identifier as an expression."
            (if (equal (point) (point-min))
                nil
              (char-equal (char-before) ?-)))))))
+
+;; see if there is an if or else or other statement that would mean no ; on this line
+(defun groovy-not-if-or-else-etc-p ( pos )
+  (save-excursion
+    (goto-char pos)
+	(back-to-indentation)
+	(not
+	 (or (looking-at c-block-stmt-1-key)
+		 (looking-at c-block-stmt-2-key)
+		 (looking-at "}?else")))))
 
 (defun groovy-vsemi-status-unknown-p () nil)
 
