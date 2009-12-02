@@ -261,21 +261,31 @@ since CC Mode treats every identifier as an expression."
         nil
       (backward-char 1)
       (or
-       (not (looking-at "[=+*/%<]"))
+       (not (looking-at "[=+*%<]"))
        (if (char-equal (char-after) ?>)
            (if (equal (point) (point-min))
                nil
              (char-equal (char-before) ?-)))))))
 
-;; see if there is an if or else or other statement that would mean no ; on this line
+;; check for case of if(stuff) and nothing else on line
+;; ie
+;; if(x > y)
+;;
+;; if(x < y) do somehting will not match
+;; else blah blah will not match either
 (defun groovy-not-if-or-else-etc-p ( pos )
   (save-excursion
     (goto-char pos)
 	(back-to-indentation)
 	(not
-	 (or (looking-at c-block-stmt-1-key)
-		 (looking-at c-block-stmt-2-key)
-		 (looking-at "}?else")))))
+	 (or 
+	  (and (looking-at "if") ; make sure nothing else on line
+		   (progn (forward-sexp 2)
+				  (groovy-ws-or-comment-to-eol-p (point))))
+	  (and (looking-at "}?else")
+		   (progn (forward-char)
+				  (forward-sexp 1)
+				  (groovy-ws-or-comment-to-eol-p (point))))))))
 
 (defun groovy-vsemi-status-unknown-p () nil)
 
@@ -440,7 +450,27 @@ need for `java-font-lock-extra-types'.")
           (skip-chars-forward " \t"))
         (vector (current-column))))))
 
-;; To allow imenu to find methods and closures assigned to variables
+;; use defadvice to override the syntactic type
+;; if we have a statement-cont, see if previous line has a virtual semicolon and if so make it statement
+(defadvice c-guess-basic-syntax (after c-guess-basic-syntax-groovy activate)
+  (save-excursion
+	(let* ((ankpos (progn 
+					 (beginning-of-line)
+					 (c-backward-syntactic-ws)
+					 (beginning-of-line)
+					 (c-forward-syntactic-ws)
+					 (point))) ; position to previous non-blank line
+		   (curelem (c-langelem-sym (car ad-return-value))))
+	  (end-of-line)
+	  (cond ((eq 'statement-cont curelem)
+			 (when (groovy-at-vsemi-p) ; if there is a virtual semi there then make it a statement
+			   (setq ad-return-value `((statement ,ankpos)))))
+
+			((eq 'topmost-intro-cont curelem)
+			 (when (groovy-at-vsemi-p) ; if there is a virtual semi there then make it a top-most-intro
+			   (setq ad-return-value `((topmost-intro ,ankpos)))))))))
+
+;; To allow imneu to find methods and closures assigned to variables
 (defvar cc-imenu-groovy-generic-expression
   `((nil
      ,(concat
@@ -481,8 +511,7 @@ Key bindings:
 
   ;; quick fix for misalignment of statements with =
   (setq c-label-minimum-indentation 0)
-  (c-set-offset 'topmost-intro-cont 0)
-  (c-set-offset 'statement-cont 0)
+
   ;; fix for indentation after a closure param list
   (c-set-offset 'brace-list-entry 'groovy-mode-fix-brace-list)
 
