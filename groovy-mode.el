@@ -267,15 +267,25 @@ since CC Mode treats every identifier as an expression."
                nil
              (char-equal (char-before) ?-)))))))
 
-;; see if there is an if or else or other statement that would mean no ; on this line
+;; check for case of if(stuff) and nothing else on line
+;; ie
+;; if(x > y)
+;;
+;; if(x < y) do somehting will not match
+;; else blah blah will not match either
 (defun groovy-not-if-or-else-etc-p ( pos )
   (save-excursion
     (goto-char pos)
 	(back-to-indentation)
 	(not
-	 (or (looking-at c-block-stmt-1-key)
-		 (looking-at c-block-stmt-2-key)
-		 (looking-at "}?else")))))
+	 (or 
+	  (and (looking-at "if") ; make sure nothing else on line
+		   (progn (forward-sexp 2)
+				  (groovy-ws-or-comment-to-eol-p (point))))
+	  (and (looking-at "}?else")
+		   (progn (forward-char)
+				  (forward-sexp 1)
+				  (groovy-ws-or-comment-to-eol-p (point))))))))
 
 (defun groovy-vsemi-status-unknown-p () nil)
 
