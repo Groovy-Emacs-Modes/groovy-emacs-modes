@@ -470,6 +470,14 @@ need for `java-font-lock-extra-types'.")
 			 (when (groovy-at-vsemi-p) ; if there is a virtual semi there then make it a top-most-intro
 			   (setq ad-return-value `((topmost-intro ,ankpos)))))))))
 
+;; sometimes a closing brace is mistaken for a statement, fix it
+(defun groovy-mode-fix-statement (langelem)
+  (save-excursion
+	(back-to-indentation)
+	(if (looking-at "}")      ; if it is }
+		'-          ; then de-indent from base
+	  0)))
+
 ;; To allow imneu to find methods and closures assigned to variables
 (defvar cc-imenu-groovy-generic-expression
   `((nil
@@ -514,6 +522,9 @@ Key bindings:
 
   ;; fix for indentation after a closure param list
   (c-set-offset 'brace-list-entry 'groovy-mode-fix-brace-list)
+  
+  ;; fix for } after a fixed continuation
+  (c-set-offset 'statement 'groovy-mode-fix-statement)
 
   ;; get arglists (in groovy lists or maps) to align properly
   (c-set-offset 'arglist-close '(c-lineup-close-paren))
