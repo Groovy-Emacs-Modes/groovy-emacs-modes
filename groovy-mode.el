@@ -478,19 +478,64 @@ need for `java-font-lock-extra-types'.")
 		'-          ; then de-indent from base
 	  0)))
 
-;; To allow imneu to find methods and closures assigned to variables
-(defvar cc-imenu-groovy-generic-expression
-  `((nil
-     ,(concat
-       "[" c-alpha "_][\]\[." c-alnum "_]+[ \t\n\r]+" ; type spec
-       "\\([" c-alpha "_][" c-alnum "_]+\\)" ; method name
-       "[ \t\n\r]*"
-       ;; An argument list that is either empty or contains pretty much anything
-       "(.*)[ \t\n\r]*{"
-	   ) 1)
 
-	("*Closures*" "def[ \t]+\\([a-zA-Z_][a-zA-Z0-9_]*\\)[ \t]*=[ \t]*{" 1)
-	)
+;; based on java-function-regexp
+;; Complicated regexp to match method declarations in interfaces or classes
+;; A nasty test case is:
+;;    else if(foo instanceof bar) {
+;; which will get mistaken for a function as Groovy does not require types on arguments
+;; so we need to check for empty parens or comma separated list, or type args
+(defvar groovy-function-regexp
+  (concat
+   "^[ \t]*"                                   ; leading white space
+   "\\(public\\|private\\|protected\\|"        ; some of these 8 keywords
+   "abstract\\|final\\|static\\|"
+   "synchronized\\|native|def"
+   "\\|[ \t\n\r]\\)*"                          ; or whitespace
+   "[a-zA-Z0-9_$]*"                            ; optional return type
+   "[ \t\n\r]*[[]?[]]?"                        ; (could be array)
+   "[ \t\n\r]+"                                ; whitespace
+   "\\([a-zA-Z0-9_$]+\\)"                      ; the name we want
+   "[ \t\n\r]*"                                ; optional whitespace
+   "("                                         ; open the param list
+   "[ \t]*"                                    ; optional whitespace
+   "\\("
+   "[ \t\n\r]*\\|"                             ; empty parens or
+   "[a-zA-Z0-9_$]+\\|"                         ; single param or
+   ".+?,.+?\\|"                                ; multi comma separated params or
+   "[a-zA-Z0-9_$]+"                            ; a type
+   "[ \t\n\r]*[[]?[]]?"                        ; optional array
+   "[ \t\n\r]+[a-zA-Z0-9_$]+"                  ; and param
+   "\\)"
+   "[ \t\n\r]*"                                ; optional whitespace
+   ")"                                         ; end the param list
+   "[ \t\n\r]*"                                ; whitespace
+;   "\\(throws\\([, \t\n\r]\\|[a-zA-Z0-9_$]\\)+\\)?{"
+   "\\(throws[^{;]+\\)?"                       ; optional exceptions
+   "[;{]"                                      ; ending ';' (interfaces) or '{' 
+										       ; TODO groovy interfaces don't need to end in ;
+   )
+  "Matches method names in groovy code, select match 2")
+
+(defvar groovy-class-regexp
+  "^[ \t\n\r]*\\(final\\|abstract\\|public\\|[ \t\n\r]\\)*class[ \t\n\r]+\\([a-zA-Z0-9_$]+\\)[^;{]*{"
+  "Matches class names in groovy code, select match 2")
+
+(defvar groovy-interface-regexp
+  "^[ \t\n\r]*\\(abstract\\|public\\|[ \t\n\r]\\)*interface[ \t\n\r]+\\([a-zA-Z0-9_$]+\\)[^;]*;"
+  "Matches interface names in groovy code, select match 2")
+
+(defvar groovy-imenu-regexp
+  (list (list nil groovy-function-regexp 2)
+        (list ".CLASSES." groovy-class-regexp 2)
+        (list ".INTERFACES." groovy-interface-regexp 2)
+		(list ".CLOSURES." 	"def[ \t]+\\([a-zA-Z_][a-zA-Z0-9_]*\\)[ \t]*=[ \t]*{" 1))
+  "Imenu expression for Groovy")
+
+
+;; Setup imenu to extract functions, classes, interfaces and closures assigned to variables
+(defvar cc-imenu-groovy-generic-expression
+  groovy-imenu-regexp
   "Imenu generic expression for Groovy mode.  See `imenu-generic-expression'.")
 
 ;;; The entry point into the mode
