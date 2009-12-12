@@ -118,10 +118,12 @@ have Font Lock enabled. ${ } is expanded when in a GString"
   (and groovy-electric-mode
        (consp (memq 'font-lock-string-face (text-properties-at (point))))))
 
-;; TODO This checks it is a GString ("...") not normal string '...'
+;; This checks it is a GString ("...") not normal string '...'
 (defun groovy-electric-gstring-at-point-p()
   (and groovy-electric-mode
-       (consp (memq 'font-lock-string-face (text-properties-at (point))))))
+       (consp (memq 'font-lock-string-face (text-properties-at (point))))
+	   (save-excursion
+		 (char-equal ?\" (char-after (car (c-literal-limits)))))))
 
 (defun groovy-electric-is-last-command-char-expandable-punct-p()
   (or (memq 'all groovy-electric-expand-delimiters-list)
