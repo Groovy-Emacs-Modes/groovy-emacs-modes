@@ -19,7 +19,7 @@
 ;;
 ;; Based on ruby-electric.el Copyright (C) 2005 by Dee Zsombor <dee dot zsombor at gmail dot com>.
 ;; Due credit: original work was inspired by a code snippet posted by
-;; Frederick Ros at http://ruvygarden.org/ruby?EmacsExtensions.
+;; Frederick Ros at http://rubygarden.org/ruby?EmacsExtensions.
 
 ;;; Commentary:
 ;;
