@@ -19,7 +19,7 @@
 ;;; Authors:
 ;;
 ;;  Russel Winder <russel.winder@concertant.com>, 2006--
-;;  Jim Morris, 2009--
+;;  Jim Morris <morris@wolfman.com>, 2009--
 
 ;;; Commentary:
 ;;
