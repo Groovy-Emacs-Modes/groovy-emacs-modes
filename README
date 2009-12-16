@@ -1,15 +1,12 @@
-This is a Groovy mode for (X)Emacs.
+This is a collection of (X)Emacs modes for use with Groovy-related technology -- Groovy, Grails, etc.
 
-This is a derived mode of Java mode which is itself a derived mode in CC Mode. Inspiration came
+The Groovy mode is a derived mode of Java mode which is itself a derived mode in CC Mode. Inspiration came
 from Dylan R.E. Moonfire's C# mode.
-
-Copyright (C) 2006,2009 Russel Winder
 
 This software is licenced using GNU General Public Licence version 2.
 
-Author:: Russel Winder
+The master of all the material is the Bazaar branch lp:groovy-emacs-mode.  This branch is mirrored in the
+Groovy Subversion repository at https://svn.codehaus.org/groovy/trunk/groovy/ide/emacs.
 
-Although the master mainline branch for this material is in the Groovy Subversion repository
-(https://svn.codehaus.org/groovy/trunk/groovy/ide/emacs), Bazaar is used for development -- the directory in
-Subversion holds a Bazaar branch so that it is a peer to the feature branches using bzr-svn.  Feature
-branches are held on Launchpad, the project is at https://launchpad.net/groovy-emacs-mode.
+Bazaar is used for development -- the directory in Subversion holds a Bazaar branch so that it is a peer to
+the feature branches using bzr-svn.  Feature branches are held on Launchpad.
