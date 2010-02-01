@@ -261,7 +261,7 @@ since CC Mode treats every identifier as an expression."
         nil
       (backward-char 1)
       (or
-       (not (looking-at "[=+*%<]"))
+       (not (looking-at "[=+*%<{:]"))
        (if (char-equal (char-after) ?>)
            (if (equal (point) (point-min))
                nil
@@ -415,18 +415,16 @@ need for `java-font-lock-extra-types'.")
 
 ;;; The following are used to overide cc-mode indentation behavior to match groovy
 
-;; if we are in a brace-list-entry (which in groovy is probably a
-;; closure) and fist list entry ends with -> (excluding comment) then
+;; if we are in a closure that has an argument eg ends with -> (excluding comment) then
 ;; change indent else lineup with previous one
-(defun groovy-mode-fix-brace-list (langelem)
-  (save-excursion
-    (let* ((ankpos (cdr langelem)) ; position of anchor element
-           (curcol (progn (goto-char ankpos)
-                          (current-indentation))))
-      (if (search-forward "->" (c-point 'eol) t)      ; if the line has a -> in it 
-          (vector (+ curcol c-basic-offset))          ; then indent from base
-        0))
-    ))
+(defun groovy-mode-fix-closure-with-argument (langelem)
+  (save-excursion 
+	(back-to-indentation)	
+	(c-backward-syntactic-ws)
+	(backward-char 2)
+	(if (looking-at "->")                                  ; if the line has a -> in it 
+		(vector (+ (current-indentation) c-basic-offset))  ; then indent from base
+	  0)))
 
 ;; A helper function from: http://mihai.bazon.net/projects/emacs-javascript-mode/javascript.el
 ;; Originally named js-lineup-arglist, renamed to groovy-lineup-arglist
@@ -450,34 +448,40 @@ need for `java-font-lock-extra-types'.")
           (skip-chars-forward " \t"))
         (vector (current-column))))))
 
-;; use defadvice to override the syntactic type
-;; if we have a statement-cont, see if previous line has a virtual semicolon and if so make it statement
+;; use defadvice to override the syntactic type if we have a
+;; statement-cont, see if previous line has a virtual semicolon and if
+;; so make it statement. if it is a brace-list, change to statement as
+;; we don't have brace-lists in groovy they are usually closures
 (defadvice c-guess-basic-syntax (after c-guess-basic-syntax-groovy activate)
   (save-excursion
-	(let* ((ankpos (progn 
-					 (beginning-of-line)
-					 (c-backward-syntactic-ws)
-					 (beginning-of-line)
-					 (c-forward-syntactic-ws)
-					 (point))) ; position to previous non-blank line
-		   (curelem (c-langelem-sym (car ad-return-value))))
-	  (end-of-line)
-	  (cond ((eq 'statement-cont curelem)
-			 (when (groovy-at-vsemi-p) ; if there is a virtual semi there then make it a statement
-			   (setq ad-return-value `((statement ,ankpos)))))
+ 	(let* ((ankpos (progn 
+ 					 (beginning-of-line)
+ 					 (c-backward-syntactic-ws)
+ 					 (beginning-of-line)
+ 					 (c-forward-syntactic-ws)
+ 					 (point))) ; position to previous non-blank line
+ 		   (curelem (c-langelem-sym (car ad-return-value))))
+ 	  (end-of-line)
+ 	  (cond
+	   ((eq 'statement-cont curelem)
+		(when (groovy-at-vsemi-p) ; if there is a virtual semi there then make it a statement
+		  (setq ad-return-value `((statement ,ankpos)))))
+	   
+	   ((eq 'topmost-intro-cont curelem)
+		(when (groovy-at-vsemi-p) ; if there is a virtual semi there then make it a top-most-intro
+		  (setq ad-return-value `((topmost-intro ,ankpos)))))
 
-			((eq 'topmost-intro-cont curelem)
-			 (when (groovy-at-vsemi-p) ; if there is a virtual semi there then make it a top-most-intro
-			   (setq ad-return-value `((topmost-intro ,ankpos)))))))))
+	   ((eq 'brace-list-entry curelem)
+		(save-excursion (goto-char ankpos)
+						(if (looking-at c-label-kwds-regexp) ; if it is a case or default
+							(setq ad-return-value `((statement-case-intro ,ankpos)))
+						  (setq ad-return-value `((statement ,ankpos)))))) ; else make statement
+	   
+	   ;; try to eliminate brace lists
+	   ((eq 'brace-list-intro curelem)
+		(setq ad-return-value `((defun-block-intro ,ankpos))))
 
-;; sometimes a closing brace is mistaken for a statement, fix it
-(defun groovy-mode-fix-statement (langelem)
-  (save-excursion
-	(back-to-indentation)
-	(if (looking-at "}")      ; if it is }
-		'-          ; then de-indent from base
-	  0)))
-
+	   ))))
 
 ;; based on java-function-regexp
 ;; Complicated regexp to match method declarations in interfaces or classes
@@ -566,10 +570,7 @@ Key bindings:
   (setq c-label-minimum-indentation 0)
 
   ;; fix for indentation after a closure param list
-  (c-set-offset 'brace-list-entry 'groovy-mode-fix-brace-list)
-  
-  ;; fix for } after a fixed continuation
-  (c-set-offset 'statement 'groovy-mode-fix-statement)
+  (c-set-offset 'statement 'groovy-mode-fix-closure-with-argument)
 
   ;; get arglists (in groovy lists or maps) to align properly
   (c-set-offset 'arglist-close '(c-lineup-close-paren))
