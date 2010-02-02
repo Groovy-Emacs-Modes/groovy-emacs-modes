@@ -453,12 +453,10 @@ need for `java-font-lock-extra-types'.")
  	  (cond
 	   ((eq 'statement-cont curelem)
 		(when (groovy-at-vsemi-p) ; if there is a virtual semi there then make it a statement
-		  (message "changing from %s to statement" ad-return-value)
 		  (setq ad-return-value `((statement ,ankpos)))))
 	   
 	   ((eq 'topmost-intro-cont curelem)
 		(when (groovy-at-vsemi-p) ; if there is a virtual semi there then make it a top-most-intro
-		  (message "changing from %s to topmost-intro" ad-return-value)
 		  (setq ad-return-value `((topmost-intro ,ankpos)))))
 
 	   ))))
