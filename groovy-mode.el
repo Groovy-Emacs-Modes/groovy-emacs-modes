@@ -450,8 +450,7 @@ need for `java-font-lock-extra-types'.")
 
 ;; use defadvice to override the syntactic type if we have a
 ;; statement-cont, see if previous line has a virtual semicolon and if
-;; so make it statement. if it is a brace-list, change to statement as
-;; we don't have brace-lists in groovy they are usually closures
+;; so make it statement.
 (defadvice c-guess-basic-syntax (after c-guess-basic-syntax-groovy activate)
   (save-excursion
  	(let* ((ankpos (progn 
@@ -471,17 +470,12 @@ need for `java-font-lock-extra-types'.")
 		(when (groovy-at-vsemi-p) ; if there is a virtual semi there then make it a top-most-intro
 		  (setq ad-return-value `((topmost-intro ,ankpos)))))
 
-	   ((eq 'brace-list-entry curelem)
-		(save-excursion (goto-char ankpos)
-						(if (looking-at c-label-kwds-regexp) ; if it is a case or default
-							(setq ad-return-value `((statement-case-intro ,ankpos)))
-						  (setq ad-return-value `((statement ,ankpos)))))) ; else make statement
-	   
-	   ;; try to eliminate brace lists
-	   ((eq 'brace-list-intro curelem)
-		(setq ad-return-value `((defun-block-intro ,ankpos))))
-
 	   ))))
+
+;; This disables bracelists, as most of the time in groovy they are closures
+(defadvice c-inside-bracelist-p (after c-inside-bracelist-p-groovy activate)
+  (setq ad-return-value nil))
+
 
 ;; based on java-function-regexp
 ;; Complicated regexp to match method declarations in interfaces or classes
