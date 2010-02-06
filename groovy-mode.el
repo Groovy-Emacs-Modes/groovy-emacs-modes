@@ -3,7 +3,7 @@
 ;;  Author: Russel Winder <russel@russel.org.uk>
 ;;  Created: 2006-08-01
 
-;;  Copyright (C) 2006,2009 Russel Winder
+;;  Copyright (C) 2006,2009-10 Russel Winder
 
 ;;  This program is free software; you can redistribute it and/or modify it under the terms of the GNU
 ;;  General Public License as published by the Free Software Foundation; either version 2 of the License, or
@@ -54,17 +54,12 @@
 ;;
 ;;  Should we support GString / template markup ( e.g. `<%' and `%>') specially?
 ;;
-;;  Need to support square bracket indenting for list literals.
-;;
 ;;  Need to think whether Groovy needs a different c-decl-prefix-re compared to Java.  Certainly, Java will
 ;;  have to change to handle the generics.
 ;;
 ;;  Probably need to change `c-block-prefix-disallowed-chars' as Groovy is not the same as Java.
 ;;
 ;;  Probably need to change `c-type-decl-suffix-key' as Groovy is not the same as Java.
-;;
-;;  Need to sort out the closures as blocks -- there is no keyword to use to start these the prefix is one
-;;  of: function call, field reference, or assignment.
 
 ;;;  Changes:
 ;;
