@@ -473,9 +473,7 @@ need for `java-font-lock-extra-types'.")
 	   ))))
 
 ;; This disables bracelists, as most of the time in groovy they are closures
-(defadvice c-inside-bracelist-p (after c-inside-bracelist-p-groovy activate)
-  (setq ad-return-value nil))
-
+(defun c-inside-bracelist-p (containing-sexp paren-state) nil )
 
 ;; based on java-function-regexp
 ;; Complicated regexp to match method declarations in interfaces or classes
