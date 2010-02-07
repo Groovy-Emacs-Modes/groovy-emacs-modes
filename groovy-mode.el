@@ -443,32 +443,42 @@ need for `java-font-lock-extra-types'.")
           (skip-chars-forward " \t"))
         (vector (current-column))))))
 
+(defun is-groovy-mode ()
+  "return t if we are in groovy mode else nil"
+  (eq (compare-strings "Groovy" 0 5 mode-name 0 5) t))
+
 ;; use defadvice to override the syntactic type if we have a
 ;; statement-cont, see if previous line has a virtual semicolon and if
 ;; so make it statement.
 (defadvice c-guess-basic-syntax (after c-guess-basic-syntax-groovy activate)
-  (save-excursion
- 	(let* ((ankpos (progn 
- 					 (beginning-of-line)
- 					 (c-backward-syntactic-ws)
- 					 (beginning-of-line)
- 					 (c-forward-syntactic-ws)
- 					 (point))) ; position to previous non-blank line
- 		   (curelem (c-langelem-sym (car ad-return-value))))
- 	  (end-of-line)
- 	  (cond
-	   ((eq 'statement-cont curelem)
-		(when (groovy-at-vsemi-p) ; if there is a virtual semi there then make it a statement
-		  (setq ad-return-value `((statement ,ankpos)))))
-	   
-	   ((eq 'topmost-intro-cont curelem)
-		(when (groovy-at-vsemi-p) ; if there is a virtual semi there then make it a top-most-intro
-		  (setq ad-return-value `((topmost-intro ,ankpos)))))
-
-	   ))))
+  (when (is-groovy-mode)
+	(save-excursion
+	  (let* ((ankpos (progn 
+					   (beginning-of-line)
+					   (c-backward-syntactic-ws)
+					   (beginning-of-line)
+					   (c-forward-syntactic-ws)
+					   (point))) ; position to previous non-blank line
+			 (curelem (c-langelem-sym (car ad-return-value))))
+		(end-of-line)
+		(cond
+		 ((eq 'statement-cont curelem)
+		  (when (groovy-at-vsemi-p) ; if there is a virtual semi there then make it a statement
+			(setq ad-return-value `((statement ,ankpos)))))
+		 
+		 ((eq 'topmost-intro-cont curelem)
+		  (when (groovy-at-vsemi-p) ; if there is a virtual semi there then make it a top-most-intro
+			(setq ad-return-value `((topmost-intro ,ankpos)))))
+		
+		 )))))
 
 ;; This disables bracelists, as most of the time in groovy they are closures
-(defun c-inside-bracelist-p (containing-sexp paren-state) nil )
+;; We need to check we are currently in groovy mode
+(defadvice c-inside-bracelist-p (around groovy-c-inside-bracelist-p activate)
+  (if (not (is-groovy-mode))
+	  ad-do-it
+ 	(setq ad-return-value nil)))
+
 
 ;; based on java-function-regexp
 ;; Complicated regexp to match method declarations in interfaces or classes
