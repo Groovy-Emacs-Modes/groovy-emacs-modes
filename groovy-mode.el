@@ -445,7 +445,7 @@ need for `java-font-lock-extra-types'.")
 
 (defun is-groovy-mode ()
   "return t if we are in groovy mode else nil"
-  (eq (compare-strings "Groovy" 0 5 mode-name 0 5) t))
+  (eq major-mode 'groovy-mode))
 
 ;; use defadvice to override the syntactic type if we have a
 ;; statement-cont, see if previous line has a virtual semicolon and if
