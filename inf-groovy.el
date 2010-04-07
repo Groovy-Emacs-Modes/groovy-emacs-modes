@@ -1,7 +1,8 @@
 ;;; -*-Emacs-Lisp-*-
 ;;;
-;;; Stuart Clayman   sclayman@timeindexing.com
+;;; Stuart Clayman   sclayman@ee.ucl.ac.uk
 ;;; 2006-08-01       v1
+;;; 2010-04-07       v2 fixes for new groovy-mode
 ;;;
 ;;; Inferior Groovy Mode - groovy process in a buffer.
 ;;;                      adapted from cmuscheme.el and inf-haskell.el
@@ -20,6 +21,7 @@
 ;;;    
 ;;; (2) set to load inf-groovy and set inf-groovy key definition in groovy-mode.
 ;;;
+;;;    (autoload 'groovy-mode "groovy-mode" "Groovy mode." t)
 ;;;    (autoload 'run-groovy "inf-groovy" "Run an inferior Groovy process")
 ;;;    (autoload 'inf-groovy-keys "inf-groovy" "Set local key defs for inf-groovy in groovy-mode")
 ;;;
@@ -28,6 +30,14 @@
 ;;;             (inf-groovy-keys)
 ;;;    ))
 ;;;
+;;;    ;; can set groovy-home here, if not in environment
+;;;    (setq inferior-groovy-mode-hook
+;;;        '(lambda()
+;;;           (setq groovy-home "/Users/sclayman/Downloads/groovy-1.7.1/")
+;;;           ))
+;;;
+;;; (3) execute
+;;;      M-x run-groovy
 ;;;
 
 (require 'comint)
@@ -37,13 +47,13 @@
 ;;;; for groovy
 (defvar groovy-home (getenv "GROOVY_HOME"))
 
-(defvar groovy-program-name "groovysh"
+(defvar groovy-program-name "groovysh --color=false"
   "*Program invoked by the run-groovy command")
 
-(defvar inferior-groovy-first-prompt-pattern "^groovy> *"
+(defvar inferior-groovy-first-prompt-pattern "^groovy:.*> *"
   "first prompt regex pattern of groovy interpreter.")
 
-(defvar inferior-groovy-prompt-pattern "^groovy> *"
+(defvar inferior-groovy-prompt-pattern "^groovy:.*> *"
   "prompt regex pattern of groovy interpreter.")
 
 ;;
@@ -73,8 +83,8 @@
   "Set local key defs for inf-groovy in groovy-mode"
   (define-key groovy-mode-map "\M-\C-x" 'groovy-send-definition)
   (define-key groovy-mode-map "\C-x\C-e" 'groovy-send-last-sexp)
-  (define-key groovy-mode-map "\C-c\M-b" 'groovy-send-block)
-  (define-key groovy-mode-map "\C-c\C-b" 'groovy-send-block-and-go)
+  ;;(define-key groovy-mode-map "\C-c\M-b" 'groovy-send-block)
+  ;;(define-key groovy-mode-map "\C-c\C-b" 'groovy-send-block-and-go)
   (define-key groovy-mode-map "\C-c\M-d" 'groovy-send-definition)
   (define-key groovy-mode-map "\C-c\C-x" 'groovy-send-definition-and-go)
   (define-key groovy-mode-map "\C-c\C-x" 'groovy-send-definition-and-go)
@@ -125,7 +135,7 @@ to continue it."
   (comint-mode)
   ;; Customise in inferior-groovy-mode-hook
   (setq comint-prompt-regexp inferior-groovy-prompt-pattern)
-  (groovy-mode-variables)
+  ;; (groovy-mode-variables)
   (setq major-mode 'inferior-groovy-mode)
   (setq mode-name "Inferior Groovy")
   (setq mode-line-process '(":%s"))
@@ -133,6 +143,9 @@ to continue it."
   (define-key inferior-groovy-mode-map "\C-c\C-m" 'inferior-groovy-newline-and-go)
   (setq comint-input-filter (function groovy-input-filter))
   (setq comint-get-old-input (function groovy-get-old-input))
+  (setq comint-use-prompt-regexp t)  ;; added v2
+  (setq comint-process-echoes t)  ;; added v2
+  (setq comint-eol-on-send t)  ;; added v2
   (compilation-shell-minor-mode t)
   (make-local-variable 'compilation-error-regexp-alist)
   (setq compilation-error-regexp-alist inferior-groovy-error-regexp-alist)
@@ -246,9 +259,9 @@ of `groovy-program-name').  Runs the hooks `inferior-groovy-mode-hook'
   "Send the current definition to the inferior Groovy process."
   (interactive)
   (save-excursion
-    (groovy-end-of-defun)
+    (c-end-of-defun)
     (let ((end (point)))
-      (groovy-beginning-of-defun)
+      (c-beginning-of-defun)
       (groovy-send-region (point) end))))
 
 (defun groovy-send-last-sexp ()
@@ -256,15 +269,16 @@ of `groovy-program-name').  Runs the hooks `inferior-groovy-mode-hook'
   (interactive)
   (groovy-send-region (save-excursion (backward-sexp) (point)) (point)))
 
-(defun groovy-send-block ()
-  "Send the current block to the inferior Groovy process."
-  (interactive)
-  (save-excursion
-    (groovy-end-of-block)
-    (end-of-line)
-    (let ((end (point)))
-      (groovy-beginning-of-block)
-      (groovy-send-region (point) end))))
+;; v2. current groovy-mode does not support beginning-of-block, end-of-block
+;; (defun groovy-send-block ()
+;;   "Send the current block to the inferior Groovy process."
+;;   (interactive)
+;;   (save-excursion
+;;     (groovy-end-of-block)
+;;     (end-of-line)
+;;     (let ((end (point)))
+;;       (groovy-beginning-of-block)
+;;       (groovy-send-region (point) end))))
 
 (defun switch-to-groovy (eob-p)
   "Switch to the groovy process buffer.
@@ -292,12 +306,12 @@ Then switch to the process buffer."
   (groovy-send-definition)
   (switch-to-groovy t))
 
-(defun groovy-send-block-and-go ()
-  "Send the current block to the inferior Groovy. 
-Then switch to the process buffer."
-  (interactive)
-  (groovy-send-block)
-  (switch-to-groovy t))
+;; (defun groovy-send-block-and-go ()
+;;   "Send the current block to the inferior Groovy. 
+;; Then switch to the process buffer."
+;;   (interactive)
+;;   (groovy-send-block)
+;;   (switch-to-groovy t))
 
 (defvar groovy-source-modes '(groovy-mode)
   "*Used to determine if a buffer contains Groovy source code.
@@ -319,9 +333,9 @@ next one.")
   (comint-check-source file-name) ; Check to see if buffer needs saved.
   (setq groovy-prev-l/c-dir/file (cons (file-name-directory    file-name)
 				       (file-name-nondirectory file-name)))
-  (comint-send-string (groovy-proc) (concat "(load \""
+  (comint-send-string (groovy-proc) (concat "\\i "
 					    file-name
-					    "\"\)\n")))
+					    "\n")))
 ;;; Do the user's customisation...
 
 (defvar inf-groovy-load-hook nil
