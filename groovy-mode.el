@@ -1,9 +1,10 @@
 ;;; groovy-mode.el --- Groovy mode derived mode
 
-;;  Author: Russel Winder <russel@russel.org.uk>
+;;  Author: Russel Winder <russel@winder.org.uk>
 ;;  Created: 2006-08-01
+;;  Version: 20120329
 
-;;  Copyright (C) 2006,2009-10 Russel Winder
+;;  Copyright (C) 2006,2009-10,2012 Russel Winder
 
 ;;  This program is free software; you can redistribute it and/or modify it under the terms of the GNU
 ;;  General Public License as published by the Free Software Foundation; either version 2 of the License, or
@@ -18,7 +19,7 @@
 
 ;;; Authors:
 ;;
-;;  Russel Winder <russel.winder@concertant.com>, 2006--
+;;  Russel Winder <russel@winder.org.uk>, 2006--
 ;;  Jim Morris <morris@wolfman.com>, 2009--
 
 ;;; Commentary:
@@ -399,7 +400,10 @@ need for `java-font-lock-extra-types'.")
 ;                (cons "Groovy" (c-lang-const c-mode-menu groovy)))
 
 ;;; Autoload mode trigger
-;(add-to-list 'auto-mode-alist '("\\.groovy" . groovy-mode))
+;;;###autoload
+(eval-after-load 'groovy-mode
+  (add-to-list 'auto-mode-alist '("\\.groovy" . groovy-mode)))
+
 
 ;; Custom variables
 (defcustom groovy-mode-hook nil
@@ -540,6 +544,7 @@ need for `java-font-lock-extra-types'.")
   "Imenu generic expression for Groovy mode.  See `imenu-generic-expression'.")
 
 ;;; The entry point into the mode
+;;;###autoload
 (defun groovy-mode ()
   "Major mode for editing Groovy code.
 
