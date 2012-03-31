@@ -2,7 +2,9 @@
 
 ;;  Author: Russel Winder <russel@winder.org.uk>
 ;;  Created: 2006-08-01
-;;  Version: 20120329
+;;  Version: 201203310931
+
+;;;; NB Version number is date and time yyyymmddhhMM in GMT (aka UTC).
 
 ;;  Copyright (C) 2006,2009-10,2012 Russel Winder
 
@@ -401,11 +403,12 @@ need for `java-font-lock-extra-types'.")
 
 ;;; Autoload mode trigger
 ;;;###autoload
-(eval-after-load 'groovy-mode
-  (add-to-list 'auto-mode-alist '("\\.groovy" . groovy-mode)))
-
+;(eval-after-load 'groovy-mode
+;  (add-to-list 'auto-mode-alist '("\\.groovy" . groovy-mode)))
+(add-to-list 'auto-mode-alist '("\\.groovy$" . groovy-mode))
 
 ;; Custom variables
+;;;###autoload
 (defcustom groovy-mode-hook nil
   "*Hook called by `groovy-mode'."
   :type 'hook
