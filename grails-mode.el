@@ -157,6 +157,7 @@ in `grails-root-file-find-process')")
   (anything '(anything-grails-project-files)))
 
 
+;;;###autoload
 (define-minor-mode grails-mode
   "Grails Minor Mode.
      With no argument, this command toggles the mode.

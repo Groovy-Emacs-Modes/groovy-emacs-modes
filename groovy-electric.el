@@ -81,6 +81,7 @@ The word 'all' will do all insertions."
 closing bracket or not."
   :type 'boolean :group 'groovy-electric)
 
+;;;###autoload
 (define-minor-mode groovy-electric-mode
   "Toggle Groovy Electric minor mode.
 With no argument, this command toggles the mode.  Non-null prefix

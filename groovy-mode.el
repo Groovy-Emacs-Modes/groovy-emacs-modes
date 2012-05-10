@@ -403,8 +403,6 @@ need for `java-font-lock-extra-types'.")
 
 ;;; Autoload mode trigger
 ;;;###autoload
-;(eval-after-load 'groovy-mode
-;  (add-to-list 'auto-mode-alist '("\\.groovy" . groovy-mode)))
 (add-to-list 'auto-mode-alist '("\\.groovy$" . groovy-mode))
 
 ;; Custom variables
@@ -585,6 +583,8 @@ Key bindings:
 
   (c-update-modeline))
 
+;;;###autoload
+(add-to-list 'interpreter-mode-alist '("groovy" . groovy-mode))
 
 (provide 'groovy-mode)
 

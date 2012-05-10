@@ -79,6 +79,7 @@
        (define-key inferior-groovy-mode-map "\C-c\C-m" 'inferior-groovy-newline-and-go)
 ))
 
+;;;###autoload
 (defun inf-groovy-keys ()
   "Set local key defs for inf-groovy in groovy-mode"
   (define-key groovy-mode-map "\M-\C-x" 'groovy-send-definition)
@@ -97,6 +98,7 @@
 
 (defvar groovy-buffer nil "current groovy (actually groovysh) process buffer.")
 
+;;;###autoload
 (defun inferior-groovy-mode ()
   "Major mode for interacting with an inferior groovy (groovysh) process.
 
@@ -197,6 +199,7 @@ Defaults to a regexp ignoring all inputs of 0, 1, or 2 letters.")
 		 (groovy-args-to-list (substring string pos
 						 (length string)))))))))
 
+;;;###autoload
 (defun run-groovy (cmd)
   "Run an inferior Groovy process, input and output via buffer *groovy*.
 If there is a process already running in `*groovy*', switch to that buffer.
@@ -343,6 +346,10 @@ next one.")
 This is a good place to put keybindings.")
 	
 (run-hooks 'inf-groovy-load-hook)
+
+;;;###autoload
+(eval-after-load 'groovy-mode
+  (add-hook 'groovy-mode-hook 'inf-groovy-keys))
 
 (provide 'inf-groovy)
 
