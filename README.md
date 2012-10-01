@@ -5,6 +5,5 @@ from Dylan R.E. Moonfire's C# mode.
 
 This software is licenced using GNU General Public Licence version 2.
 
-The master of all the material is the Bazaar branch lp:groovy-emacs-mode.  See https://launchpad.net/groovy-emacs-mode.
-
-Bazaar is used for development, with public feature branches being held on Launchpad.
+The master of all the material is the Git repository at git://github.com/russel/Emacs-Groovy-Mode.git. See
+[https://github.com/russel/Emacs-Groovy-Mode](https://github.com/russel/Emacs-Groovy-Mode)
