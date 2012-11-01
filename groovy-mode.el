@@ -372,6 +372,8 @@ need for `java-font-lock-extra-types'.")
     (setq groovy-mode-syntax-table
 	  (funcall (c-lang-const c-make-mode-syntax-table groovy))))
 
+;(modify-syntax-entry ?: "_" groovy-mode-syntax-table)
+
 (defvar groovy-mode-abbrev-table nil
   "Abbreviation table used in groovy-mode buffers.")
 (c-define-abbrev-table 'groovy-mode-abbrev-table
@@ -452,30 +454,72 @@ need for `java-font-lock-extra-types'.")
   "return t if we are in groovy mode else nil"
   (eq major-mode 'groovy-mode))
 
+(defun groovy-is-label (the-list)
+  (let ((ret nil))
+    (dolist (elt the-list)
+      (if (eq 'label (car elt))
+	  (setq ret t)))
+    ret))
+
+(defun groovy-backtrack-open-paren ()
+  (let ((counter 0))
+    (while (<= 0 counter)
+      (skip-chars-backward "^}]){[(")
+      (cond ((or (equal ?\] (preceding-char))
+		 (equal ?\) (preceding-char))
+		 (equal ?} (preceding-char)))
+	     (setq counter (1+ counter)))
+	    ((or (equal ?\[ (preceding-char))
+		 (equal ?\( (preceding-char))
+		 (equal ?{ (preceding-char)))
+	     (setq counter (1- counter))))
+      (backward-char 1))))
+
+(defun groovy-named-parameter-list-anchor-points ()
+  (save-excursion
+    (beginning-of-line)
+    (c-backward-syntactic-ws)
+    (if (equal ?, (preceding-char))
+	(let* ((second-anchor (progn (groovy-backtrack-open-paren)
+				     (point)))
+	       (first-anchor (progn (beginning-of-line)
+				    (c-forward-syntactic-ws)
+				    (point))))
+	  (cons first-anchor second-anchor))
+      nil)))
+
 ;; use defadvice to override the syntactic type if we have a
 ;; statement-cont, see if previous line has a virtual semicolon and if
 ;; so make it statement.
 (defadvice c-guess-basic-syntax (after c-guess-basic-syntax-groovy activate)
-  (when (is-groovy-mode)
-	(save-excursion
-	  (let* ((ankpos (progn 
-					   (beginning-of-line)
-					   (c-backward-syntactic-ws)
-					   (beginning-of-line)
-					   (c-forward-syntactic-ws)
-					   (point))) ; position to previous non-blank line
-			 (curelem (c-langelem-sym (car ad-return-value))))
-		(end-of-line)
-		(cond
-		 ((eq 'statement-cont curelem)
-		  (when (groovy-at-vsemi-p) ; if there is a virtual semi there then make it a statement
-			(setq ad-return-value `((statement ,ankpos)))))
-		 
-		 ((eq 'topmost-intro-cont curelem)
-		  (when (groovy-at-vsemi-p) ; if there is a virtual semi there then make it a top-most-intro
-			(setq ad-return-value `((topmost-intro ,ankpos)))))
-		
-		 )))))
+  (catch 'exit-early
+    (when (is-groovy-mode)
+      (if (groovy-is-label ad-return-value)
+	  (progn
+	    (let ((anchor-points (groovy-named-parameter-list-anchor-points)))
+	      (if anchor-points
+		  (setq ad-return-value `((arglist-cont-nonempty ,(car anchor-points) ,(cdr anchor-points))))
+      		(throw 'exit-early 1)))))
+      
+      (save-excursion
+	(let* ((ankpos (progn 
+			 (beginning-of-line)
+			 (c-backward-syntactic-ws)
+			 (beginning-of-line)
+			 (c-forward-syntactic-ws)
+			 (point))) ; position to previous non-blank line
+	       (curelem (c-langelem-sym (car ad-return-value))))
+	  (end-of-line)
+	  (cond
+	   ((eq 'statement-cont curelem)
+	    (when (groovy-at-vsemi-p) ; if there is a virtual semi there then make it a statement
+	      (setq ad-return-value `((statement ,ankpos)))))
+	   
+	   ((eq 'topmost-intro-cont curelem)
+	    (when (groovy-at-vsemi-p) ; if there is a virtual semi there then make it a top-most-intro
+	      (setq ad-return-value `((topmost-intro ,ankpos)))))
+	   
+	   ))))))
 
 ;; This disables bracelists, as most of the time in groovy they are closures
 ;; We need to check we are currently in groovy mode
@@ -580,6 +624,7 @@ Key bindings:
   (c-set-offset 'arglist-cont 0)
   (c-set-offset 'arglist-cont-nonempty '(groovy-lineup-arglist))
   (c-set-offset 'arglist-intro '+)
+  (c-set-offset 'label '+)
 
   (c-update-modeline))
 
