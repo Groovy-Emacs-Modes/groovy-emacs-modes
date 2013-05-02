@@ -76,7 +76,7 @@
 ;	           'groovy-send-definition)
 ;       (define-key inferior-groovy-mode-map "\C-x\C-e" 'groovy-send-last-sexp)
        (define-key inferior-groovy-mode-map "\C-c\C-l" 'groovy-load-file)
-       (define-key inferior-groovy-mode-map "\C-c\C-m" 'inferior-groovy-newline-and-go)
+       (define-key inferior-groovy-mode-map "\C-c\C-m" 'inferior-groovy-newline)
 ))
 
 ;;;###autoload
@@ -142,7 +142,7 @@ to continue it."
   (setq mode-name "Inferior Groovy")
   (setq mode-line-process '(":%s"))
   (use-local-map inferior-groovy-mode-map)
-  (define-key inferior-groovy-mode-map "\C-c\C-m" 'inferior-groovy-newline-and-go)
+  (define-key inferior-groovy-mode-map "\C-c\C-m" 'inferior-groovy-newline)
   (setq comint-input-filter (function groovy-input-filter))
   (setq comint-get-old-input (function groovy-get-old-input))
   (setq comint-use-prompt-regexp t)  ;; added v2
@@ -157,11 +157,11 @@ to continue it."
   "*Input matching this regexp are not saved on the history list.
 Defaults to a regexp ignoring all inputs of 0, 1, or 2 letters.")
 
-(defun inferior-groovy-newline-and-go()
+(defun inferior-groovy-newline ()
   (interactive)
   (comint-send-input)
   (let ((proc (groovy-proc)))
-    (comint-send-string proc "go\n")))
+    (comint-send-string proc "\n")))
 
 (defun groovy-input-filter (str)
   "Don't save anything matching inferior-groovy-filter-regexp"
@@ -251,7 +251,7 @@ of `groovy-program-name').  Runs the hooks `inferior-groovy-mode-hook'
 	(insert-before-markers str)
 	(move-marker comint-last-input-end (point))
 	(comint-send-string proc str)
-	(comint-send-string proc "go\n")
+	(comint-send-string proc "\n")
 	)
       )
     )))
