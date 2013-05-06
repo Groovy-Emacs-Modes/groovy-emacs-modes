@@ -2,11 +2,11 @@
 
 ;;  Author: Russel Winder <russel@winder.org.uk>
 ;;  Created: 2006-08-01
-;;  Version: 201203310931
+;;  Version: 201305050920
 
 ;;;; NB Version number is date and time yyyymmddhhMM in GMT (aka UTC).
 
-;;  Copyright (C) 2006,2009-10,2012 Russel Winder
+;;  Copyright (C) 2006,2009-10,2012,2013  Russel Winder
 
 ;;  This program is free software; you can redistribute it and/or modify it under the terms of the GNU
 ;;  General Public License as published by the Free Software Foundation; either version 2 of the License, or
@@ -31,15 +31,14 @@
 ;;  code may contain some code fragments from those sources that was cut-and-pasted then edited.  All other
 ;;  code was newly entered by the author.  Obviously changes have been made since then.
 ;;
-;; NB  This derived mode requires CC Mode 5.31 or later for the virtual semicolon code to work.
+;;  NB  This derived mode requires CC Mode 5.31 or later for the virtual semicolon code to work.
 ;;
 ;;  There appears to be a problem in CC Mode 5.31 such that csharp-mode and groovy-mode crash XEmacs 21.4 if
 ;;  the files are byte compiled.
 
 ;;; Bugs:
 ;;
-;;  Bug tracking is currently (2009-11-26) handled using the Groovy JIRA via the Emacs Mode component.
-;;  cf. http://jira.codehaus.org/browse/GROOVY/component/14245
+;;  Bug tracking is currently (2013-06-06) handled using the GitHub issue tracker at https://github.com/russel/Emacs-Groovy-Mode/issues
 
 ;;; Versions:
 ;;
@@ -141,61 +140,61 @@ since CC Mode treats every identifier as an expression."
   groovy `(
            ;; Primary.
            ,@(c-lang-const c-identifier-ops)
-             
+
              (postfix-if-paren "<" ">") ; Templates.
-             
+
              (prefix "super")
-             
+
              ;; Postfix.
              (left-assoc "." "*." "?." ".&" ".@")
-             
+
              (postfix "++" "--" "[" "]" "(" ")" "<:" ":>")
-             
+
              ;; Unary.
              (prefix "++" "--" "+" "-" "!" "~" "new" "(" ")")
-             
+
              ;; Multiplicative.
              (left-assoc "*" "/" "%")
-             
+
              ;; Additive.
              (left-assoc "+" "-")
-             
+
              ;; Shift.
              (left-assoc "<<" ">>" ">>>")
-             
+
              ;; Relational.
              (left-assoc "<" ">" "<=" ">=" "instanceof" "<=>")
-             
+
              ;; Matching.
              (left-assoc "=~" "==~" )
 
              ;; Equality.
              (left-assoc "==" "!=" )
-             
+
              ;; Bitwise and.
              (left-assoc "&")
-             
+
              ;; Bitwise exclusive or.
              (left-assoc "^")
-             
+
              ;; Bitwise or.
              (left-assoc "|")
-             
+
              ;; Logical and.
              (left-assoc "&&")
-             
+
              ;; Logical or.
              (left-assoc "||")
-             
+
              ;; Conditional.
              (right-assoc-sequence "?" ":")
-             
+
              ;; Assignment.
              (right-assoc ,@(c-lang-const c-assignment-operators))
-             
+
              ;; Exception.
              ;(prefix "throw") ; Java mode didn't have this but c++ mode does.  Humm...
-             
+
              ;; Sequence.
              (left-assoc ",")
 
@@ -209,7 +208,7 @@ since CC Mode treats every identifier as an expression."
                           "&" "|" "^" "~" "<<" ">>" ">>>"
                           "==" "!=" ">" "<" ">=" "<="
                           "<=>"
-                          "=~" "==~" 
+                          "=~" "==~"
                           "++" "--" "+=" "-=" "*=" "/=" "%="
                           "&=" "|=" "^=" "~=" "<<=" ">>=" ">>>="
                           "!" "&&" "||"))
@@ -276,7 +275,7 @@ since CC Mode treats every identifier as an expression."
     (goto-char pos)
 	(back-to-indentation)
 	(not
-	 (or 
+	 (or
 	  (and (looking-at "if") ; make sure nothing else on line
 		   (progn (forward-sexp 2)
 				  (groovy-ws-or-comment-to-eol-p (point))))
@@ -420,11 +419,11 @@ need for `java-font-lock-extra-types'.")
 ;; if we are in a closure that has an argument eg ends with -> (excluding comment) then
 ;; change indent else lineup with previous one
 (defun groovy-mode-fix-closure-with-argument (langelem)
-  (save-excursion 
-	(back-to-indentation)	
+  (save-excursion
+	(back-to-indentation)
 	(c-backward-syntactic-ws)
 	(backward-char 2)
-	(if (looking-at "->")                                  ; if the line has a -> in it 
+	(if (looking-at "->")                                  ; if the line has a -> in it
 		(vector (+ (current-indentation) c-basic-offset))  ; then indent from base
 	  0)))
 
@@ -500,9 +499,9 @@ need for `java-font-lock-extra-types'.")
 	      (if anchor-points
 		  (setq ad-return-value `((arglist-cont-nonempty ,(car anchor-points) ,(cdr anchor-points))))
       		(throw 'exit-early 1)))))
-      
+
       (save-excursion
-	(let* ((ankpos (progn 
+	(let* ((ankpos (progn
 			 (beginning-of-line)
 			 (c-backward-syntactic-ws)
 			 (beginning-of-line)
@@ -514,11 +513,11 @@ need for `java-font-lock-extra-types'.")
 	   ((eq 'statement-cont curelem)
 	    (when (groovy-at-vsemi-p) ; if there is a virtual semi there then make it a statement
 	      (setq ad-return-value `((statement ,ankpos)))))
-	   
+
 	   ((eq 'topmost-intro-cont curelem)
 	    (when (groovy-at-vsemi-p) ; if there is a virtual semi there then make it a top-most-intro
 	      (setq ad-return-value `((topmost-intro ,ankpos)))))
-	   
+
 	   ))))))
 
 ;; This disables bracelists, as most of the time in groovy they are closures
@@ -562,7 +561,7 @@ need for `java-font-lock-extra-types'.")
    "[ \t\n\r]*"                                ; whitespace
 ;   "\\(throws\\([, \t\n\r]\\|[a-zA-Z0-9_$]\\)+\\)?{"
    "\\(throws[^{;]+\\)?"                       ; optional exceptions
-   "[;{]"                                      ; ending ';' (interfaces) or '{' 
+   "[;{]"                                      ; ending ';' (interfaces) or '{'
 										       ; TODO groovy interfaces don't need to end in ;
    )
   "Matches method names in groovy code, select match 2")
