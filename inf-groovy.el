@@ -15,7 +15,7 @@
 ;;;    (autoload 'groovy-mode "groovy-mode"
 ;;;      "Mode for editing groovy source files" t)
 ;;;    (setq auto-mode-alist
-;;;          (append '(("\\.groovy$" . groovy-mode)) auto-mode-alist))
+;;;          (append '(("\\.groovy\\'" . groovy-mode)) auto-mode-alist))
 ;;;    (setq interpreter-mode-alist (append '(("groovy" . groovy-mode))
 ;;;    				     interpreter-mode-alist))
 ;;;    
