@@ -4,12 +4,18 @@
 ;;; 2006-08-01       v1
 ;;; 2010-04-07       v2 fixes for new groovy-mode
 ;;;
+;;; Updated by Russel Winder <russel@winder.org.uk>
+;;;
+;;; Version: 201311291207
+;;;
+;;;; NB Version number is date and time yyyymmddhhMM in GMT (aka UTC).
+;;;
 ;;; Inferior Groovy Mode - groovy process in a buffer.
 ;;;                      adapted from cmuscheme.el and inf-haskell.el
 ;;;
 ;;; Usage:
 ;;;
-;;; (1) modify .emacs to use groovy-mode 
+;;; (1) modify .emacs to use groovy-mode
 ;;;     for example :
 ;;;
 ;;;    (autoload 'groovy-mode "groovy-mode"
@@ -18,7 +24,7 @@
 ;;;          (append '(("\\.groovy\\'" . groovy-mode)) auto-mode-alist))
 ;;;    (setq interpreter-mode-alist (append '(("groovy" . groovy-mode))
 ;;;    				     interpreter-mode-alist))
-;;;    
+;;;
 ;;; (2) set to load inf-groovy and set inf-groovy key definition in groovy-mode.
 ;;;
 ;;;    (autoload 'groovy-mode "groovy-mode" "Groovy mode." t)
@@ -122,7 +128,7 @@ For information on running multiple processes in multiple buffers, see
 documentation for variable groovy-buffer.
 
 Commands:
-Return after the end of the process' output sends the text from the 
+Return after the end of the process' output sends the text from the
     end of process to point.
 Return before the end of the process' output copies the sexp ending at point
     to the end of the process' output, and sends it.
@@ -241,7 +247,7 @@ of `groovy-program-name').  Runs the hooks `inferior-groovy-mode-hook'
     (save-restriction
       (let (( str (concat (buffer-substring start end) "\n"))
 	    (proc (groovy-proc)))
-	    
+
       (with-current-buffer (process-buffer proc)
 	(while (and
 		(goto-char comint-last-input-end)
@@ -256,7 +262,7 @@ of `groovy-program-name').  Runs the hooks `inferior-groovy-mode-hook'
       )
     )))
 
-      
+
 
 (defun groovy-send-definition ()
   "Send the current definition to the inferior Groovy process."
@@ -299,18 +305,18 @@ With argument, positions cursor at end of buffer."
 Then switch to the process buffer."
   (interactive "r")
   (groovy-send-region start end)
-  
+
   (switch-to-groovy t))
 
 (defun groovy-send-definition-and-go ()
-  "Send the current definition to the inferior Groovy. 
+  "Send the current definition to the inferior Groovy.
 Then switch to the process buffer."
   (interactive)
   (groovy-send-definition)
   (switch-to-groovy t))
 
 ;; (defun groovy-send-block-and-go ()
-;;   "Send the current block to the inferior Groovy. 
+;;   "Send the current block to the inferior Groovy.
 ;; Then switch to the process buffer."
 ;;   (interactive)
 ;;   (groovy-send-block)
@@ -325,13 +331,13 @@ Used by these commands to determine defaults.")
 (defvar groovy-prev-l/c-dir/file nil
   "Caches the last (directory . file) pair.
 Caches the last pair used in the last groovy-load-file command.
-Used for determining the default in the 
+Used for determining the default in the
 next one.")
 
 (defun groovy-load-file (file-name)
   "Load a Groovy file into the inferior Groovy process."
   (interactive (comint-get-source "Load Groovy file: " groovy-prev-l/c-dir/file
-				  groovy-source-modes t)) ; T because LOAD 
+				  groovy-source-modes t)) ; T because LOAD
                                                           ; needs an exact name
   (comint-check-source file-name) ; Check to see if buffer needs saved.
   (setq groovy-prev-l/c-dir/file (cons (file-name-directory    file-name)
@@ -344,7 +350,7 @@ next one.")
 (defvar inf-groovy-load-hook nil
   "This hook is run when inf-groovy is loaded in.
 This is a good place to put keybindings.")
-	
+
 (run-hooks 'inf-groovy-load-hook)
 
 ;;;###autoload
