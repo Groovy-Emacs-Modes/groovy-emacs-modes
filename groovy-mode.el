@@ -404,7 +404,7 @@ need for `java-font-lock-extra-types'.")
 
 ;;; Autoload mode trigger
 ;;;###autoload
-(add-to-list 'auto-mode-alist '("\\.groovy$" . groovy-mode))
+(add-to-list 'auto-mode-alist '("\\.groovy\\'" . groovy-mode))
 
 ;; Custom variables
 ;;;###autoload
