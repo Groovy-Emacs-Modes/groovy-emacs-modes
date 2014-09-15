@@ -2,11 +2,11 @@
 
 ;;  Author: Russel Winder <russel@winder.org.uk>
 ;;  Created: 2006-08-01
-;;  Version: 201311291207
+;;  Version: 201409151557
 
 ;;;; NB Version number is date and time yyyymmddhhMM in GMT (aka UTC).
 
-;;  Copyright (C) 2006,2009-10,2012,2013  Russel Winder
+;;  Copyright © 2006, 2009–2010, 2012–2014  Russel Winder
 
 ;;  This program is free software; you can redistribute it and/or modify it under the terms of the GNU
 ;;  General Public License as published by the Free Software Foundation; either version 2 of the License, or
@@ -21,8 +21,8 @@
 
 ;;; Authors:
 ;;
-;;  Russel Winder <russel@winder.org.uk>, 2006--
-;;  Jim Morris <morris@wolfman.com>, 2009--
+;;  Russel Winder <russel@winder.org.uk>, 2006–
+;;  Jim Morris <morris@wolfman.com>, 2009–
 
 ;;; Commentary:
 ;;
@@ -42,7 +42,8 @@
 
 ;;; Versions:
 ;;
-;;    0.1.0 - will be the initial release when it is ready :-)
+;;  This mode is available on MELPA which tracks the mainline Git repository on GitHub, so there is a rolling release
+;;  system based on commits to the mainline. There is unlikely to be a "formal release".
 
 ;;; Notes:
 ;;
@@ -402,9 +403,7 @@ need for `java-font-lock-extra-types'.")
 ;(easy-menu-define c-groovy-menu groovy-mode-map "Groovy Mode Commands"
 ;                (cons "Groovy" (c-lang-const c-mode-menu groovy)))
 
-;;; Autoload mode trigger
-;;;###autoload
-(add-to-list 'auto-mode-alist '("\\.groovy\\'" . groovy-mode))
+;;;###autoload (add-to-list 'auto-mode-alist '("\\.groovy\\'" . groovy-mode))
 
 ;; Custom variables
 ;;;###autoload
@@ -626,9 +625,6 @@ Key bindings:
   (c-set-offset 'label '+)
 
   (c-update-modeline))
-
-;;;###autoload
-(add-to-list 'interpreter-mode-alist '("groovy" . groovy-mode))
 
 (provide 'groovy-mode)
 
