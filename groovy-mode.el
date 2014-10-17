@@ -2,7 +2,7 @@
 
 ;;  Author: Russel Winder <russel@winder.org.uk>
 ;;  Created: 2006-08-01
-;;  Version: 201409151557
+;;  Version: 201410171703
 
 ;;;; NB Version number is date and time yyyymmddhhMM in GMT (aka UTC).
 
@@ -404,7 +404,8 @@ need for `java-font-lock-extra-types'.")
 ;(easy-menu-define c-groovy-menu groovy-mode-map "Groovy Mode Commands"
 ;                (cons "Groovy" (c-lang-const c-mode-menu groovy)))
 
-;;;###autoload (add-to-list 'auto-mode-alist '("\\.groovy\\'" . groovy-mode))
+;;----------------------------------------------------------------------------
+;;;###autoload (add-to-list 'auto-mode-alist '("\\.g\\(?:ant\\|roovy\\|radle\\)\\'" . groovy-mode))
 
 ;; Custom variables
 ;;;###autoload
@@ -412,7 +413,6 @@ need for `java-font-lock-extra-types'.")
   "*Hook called by `groovy-mode'."
   :type 'hook
   :group 'c)
-
 
 ;;; The following are used to overide cc-mode indentation behavior to match groovy
 
@@ -587,9 +587,12 @@ need for `java-font-lock-extra-types'.")
   groovy-imenu-regexp
   "Imenu generic expression for Groovy mode.  See `imenu-generic-expression'.")
 
-;;; The entry point into the mode
+;; For compatibility with Emacs < 24
+(defalias 'groovy-parent-mode
+  (if (fboundp 'prog-mode) 'prog-mode 'fundamental-mode))
+
 ;;;###autoload
-(defun groovy-mode ()
+(define-derived-mode groovy-mode groovy-parent-mode "Groovy"
   "Major mode for editing Groovy code.
 
 The hook `c-mode-common-hook' is run with no args at mode
@@ -597,14 +600,9 @@ initialization, then `groovy-mode-hook'.
 
 Key bindings:
 \\{groovy-mode-map}"
-  (interactive)
-  (kill-all-local-variables)
   (c-initialize-cc-mode t)
-  (set-syntax-table groovy-mode-syntax-table)
-  (setq major-mode 'groovy-mode
-	mode-name "Groovy"
-	local-abbrev-table groovy-mode-abbrev-table
-	abbrev-mode t)
+  (setq local-abbrev-table groovy-mode-abbrev-table
+        abbrev-mode t)
   (use-local-map groovy-mode-map)
   (c-init-language-vars groovy-mode)
   (c-common-init 'groovy-mode)
