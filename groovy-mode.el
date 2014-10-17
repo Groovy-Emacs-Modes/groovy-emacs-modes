@@ -218,11 +218,12 @@ since CC Mode treats every identifier as an expression."
 ;; Mode `Virtual semicolon material.  The idea is to say when an EOL is a `virtual semicolon,
 ;; i.e. a statement terminator.
 
-(c-lang-defconst c-stmt-delim-chars
-                 groovy "^;{}\n\r?:")
+(when (version< c-version "5.32.2")
+  (c-lang-defconst c-stmt-delim-chars
+                   groovy "^;{}\n\r?:")
 
-(c-lang-defconst c-stmt-delim-chars-with-comma
-                 groovy "^;,{}\n\r?:")
+  (c-lang-defconst c-stmt-delim-chars-with-comma
+                   groovy "^;,{}\n\r?:"))
 
 ;;  Is there a virtual semicolon at POS or point?
 ;;
