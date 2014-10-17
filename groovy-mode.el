@@ -1,8 +1,9 @@
-;;; groovy-mode.el --- Groovy mode derived mode
+;;; groovy-mode.el --- Major mode for Groovy source files
 
 ;;  Author: Russel Winder <russel@winder.org.uk>
 ;;  Created: 2006-08-01
 ;;  Version: 201410171703
+;;  Keywords: languages
 
 ;;;; NB Version number is date and time yyyymmddhhMM in GMT (aka UTC).
 
@@ -31,7 +32,7 @@
 ;;  code may contain some code fragments from those sources that was cut-and-pasted then edited.  All other
 ;;  code was newly entered by the author.  Obviously changes have been made since then.
 ;;
-;;  NB  This derived mode requires CC Mode 5.31 or later for the virtual semicolon code to work.
+;;  NB  This mode requires CC Mode 5.31 or later for the virtual semicolon code to work.
 ;;
 ;;  There appears to be a problem in CC Mode 5.31 such that csharp-mode and groovy-mode crash XEmacs 21.4 if
 ;;  the files are byte compiled.
