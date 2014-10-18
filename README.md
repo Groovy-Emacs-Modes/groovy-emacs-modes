@@ -1,3 +1,5 @@
+# Emacs Modes for Groovy and Grails
+
 This is a collection of (X)Emacs modes for use with Groovy-related technology -- Groovy, Grails, etc.
 
 The Groovy major mode is a derived mode of Java mode which is itself a derived mode in CC Mode. Inspiration

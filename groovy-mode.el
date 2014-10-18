@@ -1,8 +1,10 @@
 ;;; groovy-mode.el --- Major mode for Groovy source files
 
-;;  Author: Russel Winder <russel@winder.org.uk>
+;;  Author: Russel Winder <russel@winder.org.uk>, 2006–
+;;	Jim Morris <morris@wolfman.com>, 2009–
+;;  Maintainer:  Russel Winder <russel@winder.org.uk>
 ;;  Created: 2006-08-01
-;;  Version: 201410171703
+;;  Version: 201410180537
 ;;  Keywords: languages
 
 ;;;; NB Version number is date and time yyyymmddhhMM in GMT (aka UTC).
@@ -20,13 +22,12 @@
 ;;  You should have received a copy of the GNU General Public License along with this program; if not, write
 ;;  to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-;;; Authors:
-;;
-;;  Russel Winder <russel@winder.org.uk>, 2006–
-;;  Jim Morris <morris@wolfman.com>, 2009–
+;;; Usage:
+;; Put these lines in your init file.
+;;   (autoload 'groovy-mode "groovy-mode" "Major mode for editing Groovy code." t)
+;;   (add-to-list 'auto-mode-alist '("\\.groovy\\'" . groovy-mode))
 
 ;;; Commentary:
-;;
 ;;  This mode was initially developed using the Java and Awk modes that are part of CC Mode (the 5.31 source
 ;;  was used) and C# Mode from Dylan R. E. Moonfire <contact@mfgames.com> (the 0.5.0 source was used).  This
 ;;  code may contain some code fragments from those sources that was cut-and-pasted then edited.  All other
@@ -38,16 +39,14 @@
 ;;  the files are byte compiled.
 
 ;;; Bugs:
-;;
-;;  Bug tracking is currently (2013-06-06) handled using the GitHub issue tracker at https://github.com/russel/Emacs-Groovy-Mode/issues
+;;  Bug tracking is currently handled using the GitHub issue tracker at
+;;  https://github.com/Groovy-Emacs-Modes/groovy-emacs-modes/issues
 
 ;;; Versions:
-;;
 ;;  This mode is available on MELPA which tracks the mainline Git repository on GitHub, so there is a rolling release
 ;;  system based on commits to the mainline. There is unlikely to be a "formal release".
 
 ;;; Notes:
-;;
 ;;  Need to think about the `*.', `?.', `.&' and `.@' operators.  Also, `..' and `..<'.  This probably means
 ;;  changing `c-after-id-concat-ops' but also `c-operators'.
 ;;
@@ -65,10 +64,15 @@
 ;;
 ;;  Probably need to change `c-type-decl-suffix-key' as Groovy is not the same as Java.
 
-;;;  Changes:
-;;
-;;  See the history in the Bazaar branch.
+;;;  TODO:
+;;   Issues with this code are managed via the project issue management
+;;   on GitHub: https://github.com/Groovy-Emacs-Modes/groovy-emacs-modes/issues?state=open
 
+;; History:
+;;   History is tracked in the Git repository rather than in this file.
+;;   See https://github.com/Groovy-Emacs-Modes/groovy-emacs-modes/commits/master
+
+;;----------------------------------------------------------------------------
 ;;; Code:
 
 (require 'cc-mode)
@@ -271,7 +275,7 @@ since CC Mode treats every identifier as an expression."
 ;; ie
 ;; if(x > y)
 ;;
-;; if(x < y) do somehting will not match
+;; if(x < y) do something will not match
 ;; else blah blah will not match either
 (defun groovy-not-if-or-else-etc-p ( pos )
   (save-excursion
@@ -309,7 +313,7 @@ since CC Mode treats every identifier as an expression."
 ;(c-lang-defconst c-other-op-syntax-tokens
 ;  groovy '( "<%" "%>" ))
 
-;; Groovy does not allow the full set of Java keywords in the moifier category and, of course, there is the
+;; Groovy does not allow the full set of Java keywords in the modifier category and, of course, there is the
 ;; `def' modifier which Groovy introduces to support dynamic typing.  Should `const' be treated
 ;; as reserved here as it is in Java?
 (c-lang-defconst c-modifier-kwds
@@ -625,6 +629,8 @@ Key bindings:
   (c-set-offset 'label '+)
 
   (c-update-modeline))
+
+;;----------------------------------------------------------------------------
 
 (provide 'groovy-mode)
 
