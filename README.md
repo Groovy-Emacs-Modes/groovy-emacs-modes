@@ -7,8 +7,8 @@ came from Dylan R.E. Moonfire's C# mode.
 
 This software is licenced using GNU General Public Licence version 2.
 
-The master of all the material is the Git repository at git://github.com/russel/Emacs-Groovy-Mode.git. See
-[https://github.com/russel/Emacs-Groovy-Mode](https://github.com/russel/Emacs-Groovy-Mode)
+The master of all the material is the Git repository at git://github.com/Groovy-Emacs-Modes/groovy-emacs-modes.git. See
+[https://github.com/Groovy-Emacs-Modes/groovy-emacs-modes](https://github.com/Groovy-Emacs-Modes/groovy-emacs-modes)
 
 The best way of installing this major mode, at least for Emacs 24, is to use the packaging system. Add MELPA
 to the list of repositories:
