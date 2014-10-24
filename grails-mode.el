@@ -50,6 +50,9 @@
 ;; The main addition is a view in anything that shows all the grails project files
 ;;
 
+;;----------------------------------------------------------------------------
+;;; Code:
+
 (require 'find-cmd)
 
 (eval-when-compile
@@ -100,7 +103,7 @@ in `grails-root-file-find-process')")
   (let ((dir (file-name-directory path))
 		(name (file-name-nondirectory path)))
 	(let
-		((type (cond 
+		((type (cond
 			   ((string-match "/grails-app/views/\\([a-zA-Z0-9_]+\\)/" dir)
 				(concat "view(" (match-string 1 dir) ")"))
 			   ((string-match "/grails-app/controllers/.*/\\([a-zA-Z0-9_]+\\)Controller" dir) "controller")
@@ -112,7 +115,7 @@ in `grails-root-file-find-process')")
 			   ((string-match "/grails-app/utils/" dir) "utils")
 			   ((string-match "/grails-app/\\([a-zA-Z0-9_]+\\)/" dir) (match-string 1 dir))
 			   (t "misc file"))))
-	
+
 	  (concat type ": " (file-name-sans-extension name)))))
 
 (defun grails-list-project-files ()
@@ -125,7 +128,7 @@ in `grails-root-file-find-process')")
 
   ;; get a list of all the relevant files
   (setq grails-project-files-list
-		(split-string 
+		(split-string
 		 (shell-command-to-string (concat "find " grails-project-root "grails-app "
 										  (find-to-string
 										   `(or (name "*.groovy")
@@ -141,7 +144,7 @@ in `grails-root-file-find-process')")
 
 ;; anything source for showing all grails project files
 (defvar anything-grails-project-files
-  '((name . "Files in Grails Project")	
+  '((name . "Files in Grails Project")
 	(candidates . grails-project-files-list-display)
 	(match anything-c-match-on-file-name)
 	;(candidate-transformer nil)
@@ -151,7 +154,7 @@ in `grails-root-file-find-process')")
 (defun grails-show-project-files ()
   "Uses Anything to show all the project files"
   (interactive)
-  
+
   (grails-list-project-files)
 
   (anything '(anything-grails-project-files)))
@@ -163,7 +166,7 @@ in `grails-root-file-find-process')")
      With no argument, this command toggles the mode.
      Non-null prefix argument turns on the mode.
      Null prefix argument turns off the mode.
-     
+
      When Grails mode is enabled, several keys are enabled that
      will allow navigation around a typical grails project."
   ;; The initial value.
@@ -179,4 +182,8 @@ in `grails-root-file-find-process')")
 	)
   :group 'grails)
 
+;;----------------------------------------------------------------------------
+
 (provide 'grails-mode)
+
+;;; grails-mode.el ends here
