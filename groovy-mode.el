@@ -4,7 +4,7 @@
 ;;	Jim Morris <morris@wolfman.com>, 2009–
 ;;  Maintainer:  Russel Winder <russel@winder.org.uk>
 ;;  Created: 2006-08-01
-;;  Version: 201410180537
+;;  Version: 201410241650
 ;;  Keywords: languages
 
 ;;;; NB Version number is date and time yyyymmddhhMM in GMT (aka UTC).
