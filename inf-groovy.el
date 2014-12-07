@@ -239,6 +239,30 @@ of `groovy-program-name').  Runs the hooks `inferior-groovy-mode-hook'
 
 	;;; was (error "No current process. See variable groovy-buffer"))))
 
+(defun groovy-send-string (str)
+  "Send a string STR to the inferior Groovy process."
+  (interactive "r")
+
+  (save-excursion
+    (save-restriction
+      (let ((proc (groovy-proc)))
+
+      (with-current-buffer (process-buffer proc)
+	(while (and
+		(goto-char comint-last-input-end)
+		(not (re-search-forward comint-prompt-regexp nil t))
+		(accept-process-output proc)))
+	(goto-char (process-mark proc))
+	(insert-before-markers str)
+	(move-marker comint-last-input-end (point))
+	(comint-send-string proc str)
+	(comint-send-string proc "\n")
+	)
+      )
+    )))
+
+
+
 (defun groovy-send-region (start end)
   "Send the current region to the inferior Groovy process."
   (interactive "r")
@@ -299,6 +323,14 @@ With argument, positions cursor at end of buffer."
   (cond (eob-p
 	 (push-mark)
 	 (goto-char (point-max)))))
+
+(defun groovy-send-string-and-go (str)
+  "Send the string STR to the inferior Groovy process.
+Then switch to the process buffer."
+  (interactive "r")
+  (groovy-send-string str)
+
+  (switch-to-groovy t))
 
 (defun groovy-send-region-and-go (start end)
   "Send the current region to the inferior Groovy process.
