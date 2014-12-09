@@ -81,15 +81,10 @@
 ;; constants.  (The cc-fonts require and the font-lock related constants could additionally be put inside an
 ;; (eval-after-load "font-lock" ...) but then some trickery is necessary to get them compiled.)
 (eval-when-compile
-  (let ((load-path
-	 (if (and (boundp 'byte-compile-dest-file)
-		  (stringp byte-compile-dest-file))
-	     (cons (file-name-directory byte-compile-dest-file) load-path)
-	   load-path)))
-    (load "cc-mode" nil t) ; C# mode has this
-    (load "cc-fonts" nil t) ; C# mode has this
-    (load "cc-langs" nil t) ; C# mode has this
-    (load "cc-bytecomp" nil t) ; Awk mode has this
+    (require 'cc-mode)
+    (require 'cc-fonts)
+    (require 'cc-langs)
+    (require 'cc-bytecomp)
 
     ; There seems to be a problem in Emacs 24.3 and 24.4 when batch-byte-compiling this file. It's to do
     ; with one of the symbols c-lang-defconst and c-identifier-ops. These stem from CC Mode. From
@@ -97,7 +92,7 @@
 
     (if (and (= emacs-major-version 24) (< emacs-minor-version 5))
         (require 'cl))
-))
+)
 
 (eval-and-compile
   (c-add-language 'groovy-mode 'java-mode))
