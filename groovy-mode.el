@@ -90,6 +90,13 @@
     (load "cc-fonts" nil t) ; C# mode has this
     (load "cc-langs" nil t) ; C# mode has this
     (load "cc-bytecomp" nil t) ; Awk mode has this
+
+    ; There seems to be a problem in Emacs 24.3 and 24.4 when batch-byte-compiling this file. It's to do
+    ; with one of the symbols c-lang-defconst and c-identifier-ops. These stem from CC Mode. From
+    ; http://debbugs.gnu.org/db/18/18845.html it seems there is a bug that should be fixed in 24.5.
+
+    (if (and (= emacs-major-version 24) (< emacs-minor-version 5))
+        (require 'cl))
 ))
 
 (eval-and-compile
