@@ -6,9 +6,7 @@
 ;;;
 ;;; Updated by Russel Winder <russel@winder.org.uk>
 ;;;
-;;; Version: 201311291207
-;;;
-;;;; NB Version number is date and time yyyymmddhhMM in GMT (aka UTC).
+;;; Version: 201507251706
 ;;;
 ;;; Inferior Groovy Mode - groovy process in a buffer.
 ;;;                      adapted from cmuscheme.el and inf-haskell.el
