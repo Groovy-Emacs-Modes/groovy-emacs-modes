@@ -387,7 +387,9 @@ This is a good place to put keybindings.")
 
 ;;;###autoload
 (eval-after-load 'groovy-mode
-  (add-hook 'groovy-mode-hook 'inf-groovy-keys))
+  (lambda ()
+    (add-hook 'groovy-mode-hook 'inf-groovy-keys)
+    ))
 
 (provide 'inf-groovy)
 
