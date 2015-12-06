@@ -3,8 +3,12 @@
 ;; Copyright (C) 2010 Jim Morris
 
 ;; Author: Jim Morris <morris@wolfman.com>
-;; Version: 0.1
 ;; URL: http://blog.wolfman.com
+;; Maintainer:  Russel Winder <russel@winder.org.uk>
+;; Version: 201512060749
+;; Keywords: languages
+
+;;;; NB Version number is date and time yyyymmddhhMM in GMT (aka UTC).
 
 ;; This file is not currently part of GNU Emacs.
 
@@ -12,23 +16,25 @@
 ;; modify it under the terms of the GNU General Public License as
 ;; published by the Free Software Foundation; either version 2, or (at
 ;; your option) any later version.
-
+;;
 ;; This program is distributed in the hope that it will be useful, but
 ;; WITHOUT ANY WARRANTY; without even the implied warranty of
 ;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 ;; General Public License for more details.
-
+;;
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program ; see the file COPYING.  If not, write to
 ;; the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
 ;; Boston, MA 02111-1307, USA.
-;;
+
 ;;; depends on
 ;; groovy-mode
 ;; find-cmd
 ;; anything
 ;; anything-config
-;;
+
+;;; Usage:
+
 ;;; Commentary:
 ;;
 ;; A minor mode that adds some useful commands for navigating around
@@ -48,7 +54,24 @@
 ;; ((nil . ((grails-mode . 1))))
 ;;
 ;; The main addition is a view in anything that shows all the grails project files
-;;
+
+;;; Bugs:
+;;  Bug tracking is currently handled using the GitHub issue tracker at
+;;  https://github.com/Groovy-Emacs-Modes/groovy-emacs-modes/issues
+
+;;; Versions:
+;;  This mode is available on MELPA which tracks the mainline Git repository on GitHub, so there is a rolling release
+;;  system based on commits to the mainline.
+
+;;; Notes:
+
+;;;  TODO:
+;;   Issues with this code are managed via the project issue management
+;;   on GitHub: https://github.com/Groovy-Emacs-Modes/groovy-emacs-modes/issues?state=open
+
+;; History:
+;;   History is tracked in the Git repository rather than in this file.
+;;   See https://github.com/Groovy-Emacs-Modes/groovy-emacs-modes/commits/master
 
 ;;----------------------------------------------------------------------------
 ;;; Code:
