@@ -10,22 +10,27 @@ The Groovy major mode is a derived mode of Java mode which is itself a derived m
 came from Dylan R.E. Moonfire's C# mode.
 
 The best way of installing these modes, at least for Emacs 24, is to use the packaging system. Add MELPA or
-MELPA Stable to the list of repositories to access this mode. For those who want only formal, tagged
-releases use MELPA Stable:
+MELPA Stable to the list of repositories to access this mode. 
+
+For those who want only formal, tagged releases and the environment is not Windows, use MELPA Stable:
 
     (require 'package)
     (add-to-list 'package-archives
              '("melpa-stable" . "https://stable.melpa.org/packages/") t)
     (package-initialize)
 
-For those who want rolling releases as they happen use MELPA:
+For those who want rolling releases as they happen, and for Windows users use MELPA:
 
     (require 'package)
     (add-to-list 'package-archives
              '("melpa" . "http://melpa.milkbox.net/packages/") t)
     (package-initialize)
+Note: this code can be added to your ~/.emacs file.
 
-and then use M-x package-list-package to get to the package listing and install from there. MELPA tracks
+Then use 
+
+    M-x package-list-package 
+to get to the package listing and install from there. MELPA tracks
 this Git repository and updates relatively soon after each commit or formal release. For more detail on
 setting up see [MELPA Getting Started](https://melpa.org/#/getting-started).
 
