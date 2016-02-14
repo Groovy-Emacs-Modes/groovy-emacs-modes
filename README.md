@@ -22,7 +22,7 @@ For those who want rolling releases as they happen use MELPA:
 
     (require 'package)
     (add-to-list 'package-archives
-             '("melpa" . "http://melpa.milkbox.net/packages/") t)
+             '("melpa" . "https://melpa.org/packages/") t)
     (package-initialize)
 
 and then use M-x package-list-package to get to the package listing and install from there. MELPA tracks
