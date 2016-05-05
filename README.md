@@ -34,4 +34,4 @@ setting up see [MELPA Getting Started](https://melpa.org/#/getting-started).
 The master of all the material is the Git repository at
 https://github.com/Groovy-Emacs-Modes/groovy-emacs-modes .
 
-This software is licenced using GNU General Public Licence version 2.
+This software is licenced using GNU General Public Licence version 3.
