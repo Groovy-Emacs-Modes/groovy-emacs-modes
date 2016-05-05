@@ -1,6 +1,8 @@
 # Emacs Modes for Groovy and Grails
 
-[![MELPA](http://melpa.org/packages/groovy-mode-badge.svg)](http://melpa.org/#/groovy-mode)
+[![Licence](https://img.shields.io/badge/license-GPL_3-green.svg)](https://www.gnu.org/licenses/gpl-3.0.txt)
+[![MELPA](https://melpa.org/packages/groovy-mode-badge.svg)](https://melpa.org/#/groovy-mode)
+[![MELPA](https://stable.melpa.org/packages/groovy-mode-badge.svg)](https://stable.melpa.org/#/groovy-mode)
 
 This is a collection of (X)Emacs modes for use with Groovy-related technology -- Groovy, Grails, etc.
 
