@@ -6,10 +6,7 @@
 ;;	Jim Morris <morris@wolfman.com>, 2009–
 ;;  Maintainer:  Russel Winder <russel@winder.org.uk>
 ;;  Created: 2006-08-01
-;;  Version: 201605040859
 ;;  Keywords: languages
-
-;;;; NB Version number is date and time yyyymmddhhMM UTC.
 
 ;;  This program is free software: you can redistribute it and/or modify
 ;;  it under the terms of the GNU General Public License as published by
