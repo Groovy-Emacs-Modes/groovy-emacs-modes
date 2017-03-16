@@ -265,6 +265,42 @@ The function name is the second group in the regexp.")
    (groovy-triple-quoted-string-regex
     (0 (ignore (groovy-stringify-triple-quote))))))
 
+(defcustom groovy-indent-offset 4
+  "Indentation amount for Groovy.")
+
+(defun groovy-indent-line ()
+  "Indent the current line according to the number of parentheses."
+  (interactive)
+  (let* ((point-offset (- (current-column) (current-indentation)))
+         (syntax-bol (syntax-ppss (line-beginning-position)))
+         (syntax-eol (syntax-ppss (line-end-position)))
+         (multiline-string-p (nth 3 syntax-bol))
+         (multiline-comment-p (nth 4 syntax-bol))
+         ;; Indent according to the number of parens. If this line
+         ;; ends with open parens, e.g.
+         ;;     def foo() {
+         ;; then we want the outer parens, hence `min'.
+         ;; 
+         ;; This should never be negative, unless the code contains
+         ;; unbalance parens. Ensure we handle that robustly.
+         (target-paren-depth (max 0 (min (car syntax-bol) (car syntax-eol)))))
+    (cond
+     ;; Don't try to indent the line if we're in a multiline string.
+     (multiline-string-p 'noindent)
+     ;; Ensure we indent
+     ;; /*
+     ;;  * foo
+     ;;  */
+     ;;  correctly.
+     (multiline-comment-p
+      (indent-line-to (1+ (* groovy-indent-offset target-paren-depth))))
+     (t
+      (indent-line-to (* groovy-indent-offset target-paren-depth))))
+    ;; Point is now at the beginning of indentation, restore it
+    ;; to its original position (relative to indentation).
+    (when (>= point-offset 0)
+      (move-to-column (+ (current-indentation) point-offset)))))
+
 (define-derived-mode groovy-mode groovy-parent-mode "Groovy"
   "Major mode for editing Groovy code.
 
@@ -277,7 +313,8 @@ Key bindings:
        '(groovy-font-lock-keywords))
   (set (make-local-variable 'syntax-propertize-function)
        groovy-syntax-propertize-function)
-  (setq imenu-generic-expression groovy-imenu-regexp))
+  (setq imenu-generic-expression groovy-imenu-regexp)
+  (set (make-local-variable 'indent-line-function) #'groovy-indent-line))
 
 (provide 'groovy-mode)
 
