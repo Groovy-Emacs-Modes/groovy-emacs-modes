@@ -7,6 +7,7 @@
 ;;  Maintainer:  Russel Winder <russel@winder.org.uk>
 ;;  Created: 2006-08-01
 ;;  Keywords: languages
+;; Package-Requires: ((s "1.11.0"))
 
 ;;  This program is free software: you can redistribute it and/or modify
 ;;  it under the terms of the GNU General Public License as published by
@@ -55,6 +56,8 @@
 
 ;;----------------------------------------------------------------------------
 ;;; Code:
+
+(require 's)
 
 (defvar groovy-mode-syntax-table
   (let ((table (make-syntax-table)))
@@ -279,17 +282,24 @@ The function name is the second group in the regexp.")
   (interactive)
   (let* ((point-offset (- (current-column) (current-indentation)))
          (syntax-bol (syntax-ppss (line-beginning-position)))
-         (syntax-eol (syntax-ppss (line-end-position)))
          (multiline-string-p (nth 3 syntax-bol))
          (multiline-comment-p (nth 4 syntax-bol))
-         ;; Indent according to the number of parens. If this line
-         ;; ends with open parens, e.g.
-         ;;     def foo() {
-         ;; then we want the outer parens, hence `min'.
-         ;; 
-         ;; This should never be negative, unless the code contains
-         ;; unbalance parens. Ensure we handle that robustly.
-         (target-paren-depth (max 0 (min (car syntax-bol) (car syntax-eol)))))
+         (current-paren-depth (car syntax-bol))
+         (current-line (s-trim (buffer-substring (line-beginning-position)
+                                                 (line-end-position)))))
+    ;; If this line starts with a closing paren, unindent by one level.
+    ;;   if {
+    ;;   } <- this should not be indented.
+    (when (or (s-starts-with-p "}" current-line)
+              (s-starts-with-p ")" current-line)
+              (s-starts-with-p "]" current-line))
+      (setq current-paren-depth (1- current-paren-depth)))
+
+    ;; `current-paren-depth' should never be negative, unless the code
+    ;; contains unbalanced parens. Ensure we handle that robustly.
+    (when (< current-paren-depth 0)
+      (setq current-paren-depth 0))
+
     (cond
      ;; Don't try to indent the line if we're in a multiline string.
      (multiline-string-p 'noindent)
@@ -299,9 +309,10 @@ The function name is the second group in the regexp.")
      ;;  */
      ;;  correctly.
      (multiline-comment-p
-      (indent-line-to (1+ (* groovy-indent-offset target-paren-depth))))
+      (indent-line-to (1+ (* groovy-indent-offset current-paren-depth))))
+     ;; Indent according to the number of parens.
      (t
-      (indent-line-to (* groovy-indent-offset target-paren-depth))))
+      (indent-line-to (* groovy-indent-offset current-paren-depth))))
     ;; Point is now at the beginning of indentation, restore it
     ;; to its original position (relative to indentation).
     (when (>= point-offset 0)
