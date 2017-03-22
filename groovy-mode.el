@@ -238,8 +238,9 @@ The function name is the second group in the regexp.")
        (0+ space) "=")
      1 font-lock-variable-name-face)))
 
-(defconst groovy-triple-quoted-string-regex
-  (rx "\"\"\""))
+(eval-when-compile
+  (defconst groovy-triple-quoted-string-regex
+    (rx "\"\"\"")))
 
 (defun groovy-stringify-triple-quote ()
   "Put `syntax-table' property on triple-quoted strings."
@@ -265,8 +266,13 @@ The function name is the second group in the regexp.")
    (groovy-triple-quoted-string-regex
     (0 (ignore (groovy-stringify-triple-quote))))))
 
+(defgroup groovy nil
+  "A Groovy major mode."
+  :group 'languages)
+
 (defcustom groovy-indent-offset 4
-  "Indentation amount for Groovy.")
+  "Indentation amount for Groovy."
+  :group 'groovy)
 
 (defun groovy-indent-line ()
   "Indent the current line according to the number of parentheses."
