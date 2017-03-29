@@ -166,6 +166,9 @@ The function name is the second group in the regexp.")
      (group (regexp ,groovy-symbol-regexp))))
   "Match 'def foo' or 'private Type foo'. The name is the second group.")
 
+(defsubst groovy--in-string-p ()
+  (nth 3 (syntax-ppss)))
+
 (defvar groovy-font-lock-keywords
   `((,(regexp-opt
        ;; http://docs.groovy-lang.org/latest/html/documentation/#_keywords
@@ -239,7 +242,57 @@ The function name is the second group in the regexp.")
        line-start (0+ space)
        (group (+ (or (syntax word) (syntax symbol))))
        (0+ space) "=")
-     1 font-lock-variable-name-face)))
+     1 font-lock-variable-name-face)
+    ;; Highlight $foo and $foo.bar string interpolation, but not \$foo.
+    (,(lambda (limit)
+        (let ((pattern
+               (rx "$" (+ (or (syntax word) (syntax symbol))) symbol-end
+                   (? "." (+ (or (syntax word) (syntax symbol))) symbol-end)))
+              res match-data)
+          (save-match-data
+            ;; Search forward for $foo and terminate on the first
+            ;; instance we find that's inside a sring.
+            (while (and
+                    (not res)
+                    (re-search-forward pattern limit t))
+              (when (and (groovy--in-string-p)
+                         (not (eq (char-before (match-beginning 0))
+                                  ?\\)))
+                (setq res (point))
+                (setq match-data (match-data)))))
+          ;; Set match data and return point so we highlight this
+          ;; instance.
+          (when res
+            (set-match-data match-data)
+            res)))
+     (0 font-lock-variable-name-face t))
+    ;; Highlight ${foo} string interpolation.
+    (,(lambda (limit)
+        (let (res start)
+          (while (and
+                  (not res)
+                  (search-forward "${" limit t))
+            (when (and (groovy--in-string-p)
+                       (not (eq (char-before (- (point) 2))
+                                ?\\)))
+              (setq start (match-beginning 0))
+              (let ((restart-pos (match-end 0)))
+                (let (finish)
+                  ;; Search forward for the } that matches the opening {.
+                  (while (and (not res) (search-forward "}" limit t))
+                    (let ((end-pos (point)))
+                      (save-excursion
+                        (when (and (ignore-errors (backward-list 1))
+                                   (= start (1- (point))))
+                          (setq res end-pos)))))
+                  (unless res
+                    (goto-char restart-pos))))))
+          ;; Set match data and return point so we highlight this
+          ;; instance.
+          (when res
+            (set-match-data (list start res))
+            res)))
+     (0 font-lock-variable-name-face t))))
 
 (eval-when-compile
   (defconst groovy-triple-quoted-string-regex
