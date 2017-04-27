@@ -311,8 +311,8 @@ The function name is the second group in the regexp.")
                    (backward-char 3)
                    (syntax-ppss)
                  (forward-char 3))))
-    (unless (nth 4 (syntax-ppss)) ;; not inside comment
-      (if (nth 8 (syntax-ppss))
+    (unless (nth 4 ppss) ;; not inside comment
+      (if (nth 8 ppss)
           ;; We're in a string, so this must be the closing triple-quote.
           ;; Put | on the last " character.
           (put-text-property (1- string-end-pos) string-end-pos
