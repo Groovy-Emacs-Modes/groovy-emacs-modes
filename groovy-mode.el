@@ -423,7 +423,8 @@ Key bindings:
   (set (make-local-variable 'syntax-propertize-function)
        groovy-syntax-propertize-function)
   (setq imenu-generic-expression groovy-imenu-regexp)
-  (set (make-local-variable 'indent-line-function) #'groovy-indent-line))
+  (set (make-local-variable 'indent-line-function) #'groovy-indent-line)
+  (set (make-local-variable 'comment-start) "//"))
 
 (provide 'groovy-mode)
 
