@@ -255,11 +255,16 @@ The function name is the second group in the regexp.")
             (while (and
                     (not res)
                     (re-search-forward pattern limit t))
-              (when (and (groovy--in-string-p)
-                         (not (eq (char-before (match-beginning 0))
-                                  ?\\)))
-                (setq res (point))
-                (setq match-data (match-data)))))
+
+              (let* ((string-delimiter (nth 3 (syntax-ppss)))
+                     (escaped-p (eq (char-before (match-beginning 0))
+                                    ?\\)))
+                (when (and (groovy--in-string-p)
+                           ;; Interpolation does not apply in single-quoted strings.
+                           (not (eq string-delimiter ?'))
+                           (not escaped-p))
+                  (setq res (point))
+                  (setq match-data (match-data))))))
           ;; Set match data and return point so we highlight this
           ;; instance.
           (when res
