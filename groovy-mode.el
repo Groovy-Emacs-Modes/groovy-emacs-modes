@@ -322,10 +322,44 @@ The function name is the second group in the regexp.")
         (put-text-property string-start-pos (1+ string-start-pos)
                            'syntax-table (string-to-syntax "|"))))))
 
+(defun groovy--comment-p (pos)
+  "Return t if POS is in a comment."
+  (nth 4 (syntax-ppss pos)))
+
+(defun groovy-stringify-slashy-string ()
+  "Put `syntax-table' property on slashy-quoted strings."
+  (let* ((slash-pos (point))
+         ;; Look at the syntax one char forward: if we're in a
+         ;; comment, then this is a // not a /foo/.
+         (singleline-comment (prog2
+                                 (forward-char 1)
+                                 (groovy--comment-p (point))
+                               (backward-char 1)))
+         ;; Look at this syntax on the previous char: if we're on a /*
+         ;; or a */ this isn't a slashy-string.
+         (multiline-comment (prog2
+                                (backward-char 1)
+                                (groovy--comment-p (point))
+                              (forward-char 1)))
+         (string-open-pos (nth 8 (syntax-ppss))))
+    (unless (or singleline-comment multiline-comment)
+      (if string-open-pos
+          ;; If we're in a string, that was opened with /, then this
+          ;; is the closing /. This prevents confusion with """ /* """
+          (when (eq (char-after string-open-pos) ?/)
+            (put-text-property (1- slash-pos) slash-pos
+                               'syntax-table (string-to-syntax "|")))
+        ;; We're not in a string, so this is the opening /.
+        (put-text-property (1- slash-pos) slash-pos
+                           'syntax-table (string-to-syntax "|"))))))
+
 (defconst groovy-syntax-propertize-function
   (syntax-propertize-rules
    (groovy-triple-quoted-string-regex
-    (0 (ignore (groovy-stringify-triple-quote))))))
+    (0 (ignore (groovy-stringify-triple-quote))))
+   ;; http://groovy-lang.org/syntax.html#_slashy_string
+   ("/"
+    (0 (ignore (groovy-stringify-slashy-string))))))
 
 (defgroup groovy nil
   "A Groovy major mode."
