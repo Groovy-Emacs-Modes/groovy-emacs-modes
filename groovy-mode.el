@@ -301,7 +301,11 @@ The function name is the second group in the regexp.")
 
 (eval-when-compile
   (defconst groovy-triple-quoted-string-regex
-    (rx "\"\"\"")))
+    (rx "\"\"\""))
+  (defconst groovy-dollar-slashy-open-regex
+    (rx "$/"))
+  (defconst groovy-dollar-slashy-close-regex
+    (rx "/$")))
 
 (defun groovy-stringify-triple-quote ()
   "Put `syntax-table' property on triple-quoted strings."
@@ -353,10 +357,40 @@ The function name is the second group in the regexp.")
         (put-text-property (1- slash-pos) slash-pos
                            'syntax-table (string-to-syntax "|"))))))
 
+(defun groovy-stringify-dollar-slashy-open ()
+  "Put `syntax-table' property on the opening $/ of
+dollar-slashy-quoted strings."
+  (let ((delimiter-end-pos (point)))
+    (unless (or (groovy--comment-p delimiter-end-pos) (groovy--in-string-p))
+      ;; Mark the $ in $/ as a generic string delimiter.
+      (put-text-property (- delimiter-end-pos 2) (- delimiter-end-pos 1)
+                         'syntax-table (string-to-syntax "|")))))
+
+(defun groovy-stringify-dollar-slashy-close ()
+  "Put `syntax-table' property on the closing /$ of
+dollar-slashy-quoted strings."
+  (let* ((delimiter-end-pos (point))
+         ;; We can't use `syntax-ppss' here as the state may not be
+         ;; set yet. Using `parse-partial-sexp' ensures that the
+         ;; highlighting is correct even when the mode is started
+         ;; initially.
+         (in-string (nth 3 (parse-partial-sexp (point-min) delimiter-end-pos))))
+    (unless (or (groovy--comment-p delimiter-end-pos) (not in-string)
+                ;; Ignore $/$ as it's escaped and not a /$ close delimiter.
+                (looking-back (rx "$/$") 3))
+      ;; Mark the $ in /$ as a generic string delimiter.
+      (put-text-property (- delimiter-end-pos 1) delimiter-end-pos
+                         'syntax-table (string-to-syntax "|")))))
+
 (defconst groovy-syntax-propertize-function
   (syntax-propertize-rules
    (groovy-triple-quoted-string-regex
     (0 (ignore (groovy-stringify-triple-quote))))
+   ;; http://groovy-lang.org/syntax.html#_dollar_slashy_string
+   (groovy-dollar-slashy-open-regex
+    (0 (ignore (groovy-stringify-dollar-slashy-open))))
+   (groovy-dollar-slashy-close-regex
+    (0 (ignore (groovy-stringify-dollar-slashy-close))))
    ;; http://groovy-lang.org/syntax.html#_slashy_string
    ("/"
     (0 (ignore (groovy-stringify-slashy-string))))))
