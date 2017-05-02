@@ -262,7 +262,8 @@ The function name is the second group in the regexp.")
                 (when (and (groovy--in-string-p)
                            ;; Interpolation does not apply in single-quoted strings.
                            (not (eq string-delimiter ?'))
-                           (not escaped-p))
+                           (not escaped-p)
+                           (not (equal (match-string 0) "$$")))
                   (setq res (point))
                   (setq match-data (match-data))))))
           ;; Set match data and return point so we highlight this
