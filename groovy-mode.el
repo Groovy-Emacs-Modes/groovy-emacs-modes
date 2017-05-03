@@ -220,7 +220,7 @@ The function name is the second group in the regexp.")
      . font-lock-keyword-face)
     ;; Highlight println as a keyword, but don't highlight foo.println.
     (,(rx (or line-start space)
-          symbol-start (or "print" "println") symbol-end)
+          symbol-start (or "print" "printf" "println") symbol-end)
      . font-lock-keyword-face)
     ;; Constants
     (,(regexp-opt '("false" "null" "true") 'symbols)
