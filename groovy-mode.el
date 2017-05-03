@@ -255,11 +255,17 @@ The function name is the second group in the regexp.")
             (while (and
                     (not res)
                     (re-search-forward pattern limit t))
-              (when (and (groovy--in-string-p)
-                         (not (eq (char-before (match-beginning 0))
-                                  ?\\)))
-                (setq res (point))
-                (setq match-data (match-data)))))
+
+              (let* ((string-delimiter (nth 3 (syntax-ppss)))
+                     (escaped-p (eq (char-before (match-beginning 0))
+                                    ?\\)))
+                (when (and (groovy--in-string-p)
+                           ;; Interpolation does not apply in single-quoted strings.
+                           (not (eq string-delimiter ?'))
+                           (not escaped-p)
+                           (not (equal (match-string 0) "$$")))
+                  (setq res (point))
+                  (setq match-data (match-data))))))
           ;; Set match data and return point so we highlight this
           ;; instance.
           (when res
@@ -296,7 +302,11 @@ The function name is the second group in the regexp.")
 
 (eval-when-compile
   (defconst groovy-triple-quoted-string-regex
-    (rx "\"\"\"")))
+    (rx "\"\"\""))
+  (defconst groovy-dollar-slashy-open-regex
+    (rx "$/"))
+  (defconst groovy-dollar-slashy-close-regex
+    (rx "/$")))
 
 (defun groovy-stringify-triple-quote ()
   "Put `syntax-table' property on triple-quoted strings."
@@ -306,8 +316,8 @@ The function name is the second group in the regexp.")
                    (backward-char 3)
                    (syntax-ppss)
                  (forward-char 3))))
-    (unless (nth 4 (syntax-ppss)) ;; not inside comment
-      (if (nth 8 (syntax-ppss))
+    (unless (nth 4 ppss) ;; not inside comment
+      (if (nth 8 ppss)
           ;; We're in a string, so this must be the closing triple-quote.
           ;; Put | on the last " character.
           (put-text-property (1- string-end-pos) string-end-pos
@@ -317,10 +327,74 @@ The function name is the second group in the regexp.")
         (put-text-property string-start-pos (1+ string-start-pos)
                            'syntax-table (string-to-syntax "|"))))))
 
+(defun groovy--comment-p (pos)
+  "Return t if POS is in a comment."
+  (nth 4 (syntax-ppss pos)))
+
+(defun groovy-stringify-slashy-string ()
+  "Put `syntax-table' property on slashy-quoted strings."
+  (let* ((slash-pos (point))
+         ;; Look at the syntax one char forward: if we're in a
+         ;; comment, then this is a // not a /foo/.
+         (singleline-comment (prog2
+                                 (forward-char 1)
+                                 (groovy--comment-p (point))
+                               (backward-char 1)))
+         ;; Look at this syntax on the previous char: if we're on a /*
+         ;; or a */ this isn't a slashy-string.
+         (multiline-comment (prog2
+                                (backward-char 1)
+                                (groovy--comment-p (point))
+                              (forward-char 1)))
+         (string-open-pos (nth 8 (syntax-ppss))))
+    (unless (or singleline-comment multiline-comment)
+      (if string-open-pos
+          ;; If we're in a string, that was opened with /, then this
+          ;; is the closing /. This prevents confusion with """ /* """
+          (when (eq (char-after string-open-pos) ?/)
+            (put-text-property (1- slash-pos) slash-pos
+                               'syntax-table (string-to-syntax "|")))
+        ;; We're not in a string, so this is the opening /.
+        (put-text-property (1- slash-pos) slash-pos
+                           'syntax-table (string-to-syntax "|"))))))
+
+(defun groovy-stringify-dollar-slashy-open ()
+  "Put `syntax-table' property on the opening $/ of
+dollar-slashy-quoted strings."
+  (let ((delimiter-end-pos (point)))
+    (unless (or (groovy--comment-p delimiter-end-pos) (groovy--in-string-p))
+      ;; Mark the $ in $/ as a generic string delimiter.
+      (put-text-property (- delimiter-end-pos 2) (- delimiter-end-pos 1)
+                         'syntax-table (string-to-syntax "|")))))
+
+(defun groovy-stringify-dollar-slashy-close ()
+  "Put `syntax-table' property on the closing /$ of
+dollar-slashy-quoted strings."
+  (let* ((delimiter-end-pos (point))
+         ;; We can't use `syntax-ppss' here as the state may not be
+         ;; set yet. Using `parse-partial-sexp' ensures that the
+         ;; highlighting is correct even when the mode is started
+         ;; initially.
+         (in-string (nth 3 (parse-partial-sexp (point-min) delimiter-end-pos))))
+    (unless (or (groovy--comment-p delimiter-end-pos) (not in-string)
+                ;; Ignore $/$ as it's escaped and not a /$ close delimiter.
+                (looking-back (rx "$/$") 3))
+      ;; Mark the $ in /$ as a generic string delimiter.
+      (put-text-property (- delimiter-end-pos 1) delimiter-end-pos
+                         'syntax-table (string-to-syntax "|")))))
+
 (defconst groovy-syntax-propertize-function
   (syntax-propertize-rules
    (groovy-triple-quoted-string-regex
-    (0 (ignore (groovy-stringify-triple-quote))))))
+    (0 (ignore (groovy-stringify-triple-quote))))
+   ;; http://groovy-lang.org/syntax.html#_dollar_slashy_string
+   (groovy-dollar-slashy-open-regex
+    (0 (ignore (groovy-stringify-dollar-slashy-open))))
+   (groovy-dollar-slashy-close-regex
+    (0 (ignore (groovy-stringify-dollar-slashy-close))))
+   ;; http://groovy-lang.org/syntax.html#_slashy_string
+   ("/"
+    (0 (ignore (groovy-stringify-slashy-string))))))
 
 (defgroup groovy nil
   "A Groovy major mode."
@@ -384,7 +458,8 @@ Key bindings:
   (set (make-local-variable 'syntax-propertize-function)
        groovy-syntax-propertize-function)
   (setq imenu-generic-expression groovy-imenu-regexp)
-  (set (make-local-variable 'indent-line-function) #'groovy-indent-line))
+  (set (make-local-variable 'indent-line-function) #'groovy-indent-line)
+  (set (make-local-variable 'comment-start) "//"))
 
 (provide 'groovy-mode)
 
