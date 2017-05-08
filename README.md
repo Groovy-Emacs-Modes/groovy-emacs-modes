@@ -31,26 +31,29 @@ Alternatively, if you just want stable releases:
 (package-initialize)
 ```
 
+## A Bit of History
+
+This mode was originally developed as a derived mode of `java-mode` (a derived mode of `cc-mode`) inspired
+by Dylan R.E. Moonfire's C# mode. There are however what seem to be insurmountable obstacles to making
+`groovy-mode` based on CC Mode work as people want.  Wilfred Hughes created a new `groovy-mode` (standalone)
+independent of CC Mode.
+
+The CC Mode version of `groovy-mode` used to be master, and is the basis for the 1.0.1 version on MELPA. The
+work on standlone `groovy-mode` happened on a feature branch. As of 2017-05-08T08:00+01:00, the CC Mode
+version has been switched to the 1.X branch and the standalone version is now master and will be released as
+2.0.0 as soon as viable.
+
 ## cc-mode derived mode
 
-The default version of `groovy-mode` is derived from `java-mode`,
-inspired by Dylan R.E. Moonfire's C# mode.
-
-This version of `groovy-mode` is configured by overriding `cc-mode`
+The CC Mode version of `groovy-mode` is configured by overriding `cc-mode`
 settings, such as `c-basic-offset`.
 
-## Standalone mode
+## Standalone mode (the default)
 
-A
-[standalone major mode](https://github.com/Groovy-Emacs-Modes/groovy-emacs-modes/tree/standalone_mode) is
-also available. This provides more robust highlighting and
-indentation, plus niceties like string interpolation highlighting.
+The new, and now default, standalone mode provides more robust highlighting and indentation, plus niceties
+like string interpolation highlighting, compared to the CC Mode based version..
 
 ![screenshot](groovy-mode.png)
 
-The plan is to make this mode the offical `groovy-mode`, so please
-give feedback!
-
 You can configure the standalone `groovy-mode` with `M-x customize RET
 groovy-mode RET`.
-
