@@ -80,6 +80,13 @@
 ;;;###autoload (add-to-list 'auto-mode-alist '("\\.g\\(?:ant\\|roovy\\|radle\\)\\'\\|Jenkinsfile\\'" . groovy-mode))
 ;;;###autoload (add-to-list 'interpreter-mode-alist '("groovy" . groovy-mode))
 
+;; Custom variables
+;;;###autoload
+(defcustom groovy-mode-hook nil
+  "*Hook called by `groovy-mode'."
+  :type 'hook
+  :group 'c)
+
 (defconst groovy-type-regexp
   (rx symbol-start
       (group
@@ -120,7 +127,7 @@
         (+ space))
        ;; or it may start with a type name.
        (seq (regexp ,groovy-type-regexp) (+ space))))
-     
+
      ;; The actual function name.
      (group (regexp ,groovy-symbol-regexp))
 
@@ -238,7 +245,7 @@ The function name is the second group in the regexp.")
     (,groovy-declaration-regexp
      2 font-lock-variable-name-face)
     ;; Highlight variables of the form 'foo = '
-    (,(rx 
+    (,(rx
        line-start (0+ space)
        (group (+ (or (syntax word) (syntax symbol))))
        (0+ space) "=")
@@ -445,6 +452,7 @@ dollar-slashy-quoted strings."
     (when (>= point-offset 0)
       (move-to-column (+ (current-indentation) point-offset)))))
 
+;;;###autoload
 (define-derived-mode groovy-mode groovy-parent-mode "Groovy"
   "Major mode for editing Groovy code.
 
