@@ -4,6 +4,7 @@
 
 ;;  Author: Russel Winder <russel@winder.org.uk>, 2006–
 ;;	Jim Morris <morris@wolfman.com>, 2009–
+;;	Wilfred Hughes <me@wilfred.me.uk>, 2017–
 ;;  Maintainer:  Russel Winder <russel@winder.org.uk>
 ;;  Created: 2006-08-01
 ;;  Keywords: languages
