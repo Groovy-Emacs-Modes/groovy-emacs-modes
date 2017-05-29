@@ -1,5 +1,6 @@
 # Emacs Modes for Groovy and Grails
 
+[![Travis-CI](https://travis-ci.org/Groovy-Emacs-Modes/groovy-emacs-modes.svg?branch=master)](https://travis-ci.org/Groovy-Emacs-Modes/groovy-emacs-modes)
 [![Licence](https://img.shields.io/badge/license-GPL_3-green.svg)](https://www.gnu.org/licenses/gpl-3.0.txt)
 [![MELPA](https://melpa.org/packages/groovy-mode-badge.svg)](https://melpa.org/#/groovy-mode)
 [![MELPA](https://stable.melpa.org/packages/groovy-mode-badge.svg)](https://stable.melpa.org/#/groovy-mode)
