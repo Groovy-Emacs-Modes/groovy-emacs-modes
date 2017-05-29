@@ -309,6 +309,9 @@ The function name is the second group in the regexp.")
      (0 font-lock-variable-name-face t))))
 
 (eval-when-compile
+  ;; http://groovy-lang.org/syntax.html#_shebang_line
+  (defconst groovy-shebang-regex
+    (rx buffer-start "#"))
   (defconst groovy-triple-quoted-string-regex
     (rx "\"\"\""))
   (defconst groovy-dollar-slashy-open-regex
@@ -393,6 +396,11 @@ dollar-slashy-quoted strings."
 
 (defconst groovy-syntax-propertize-function
   (syntax-propertize-rules
+   ;; Treat the shebang as a comment. We reuse comment sequence b
+   ;; (which is the // comment) so Emacs treats \n as the end of the
+   ;; comment.
+   (groovy-shebang-regex
+    (0 "< b"))
    (groovy-triple-quoted-string-regex
     (0 (ignore (groovy-stringify-triple-quote))))
    ;; http://groovy-lang.org/syntax.html#_dollar_slashy_string
