@@ -81,13 +81,6 @@
 ;;;###autoload (add-to-list 'auto-mode-alist '("\\.g\\(?:ant\\|roovy\\|radle\\)\\'\\|Jenkinsfile\\'" . groovy-mode))
 ;;;###autoload (add-to-list 'interpreter-mode-alist '("groovy" . groovy-mode))
 
-;; Custom variables
-;;;###autoload
-(defcustom groovy-mode-hook nil
-  "*Hook called by `groovy-mode'."
-  :type 'hook
-  :group 'c)
-
 (defconst groovy-type-regexp
   (rx symbol-start
       (group
