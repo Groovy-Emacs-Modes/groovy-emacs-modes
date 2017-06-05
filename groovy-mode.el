@@ -420,6 +420,24 @@ dollar-slashy-quoted strings."
   "Indentation amount for Groovy."
   :group 'groovy)
 
+(defun groovy--ends-with-infix-p (str)
+  "Does STR end with an infix operator?"
+  (string-match-p
+   (rx
+    ;; http://docs.groovy-lang.org/next/html/documentation/core-operators.html
+    (or "+" "-" "*" "/" "%" "**"
+        "=" "+=" "-=" "*=" "/=" "%=" "**="
+        "==" "!=" "<" "<=" ">" ">=" "<<=" ">>=" ">>>=" "&=" "^=" "|="
+        "&&" "!!"
+        "&" "|" "^" "<<" "<<<" ">>" ">>>"
+        "?" "?:" ":"
+        "=~" "==~"
+        "<=>" "<>"
+        "in" "as")
+    (0+ space)
+    line-end)
+   str))
+
 (defun groovy-indent-line ()
   "Indent the current line according to the number of parentheses."
   (interactive)
@@ -455,7 +473,15 @@ dollar-slashy-quoted strings."
       (indent-line-to (1+ (* groovy-indent-offset current-paren-depth))))
      ;; Indent according to the number of parens.
      (t
-      (indent-line-to (* groovy-indent-offset current-paren-depth))))
+      (let ((indent-level current-paren-depth)
+            prev-line)
+        (save-excursion
+          ;; Try to go back one line.
+          (when (zerop (forward-line -1))
+            (setq prev-line (buffer-substring (point) (line-end-position)))))
+        (when (and prev-line (groovy--ends-with-infix-p prev-line))
+          (setq indent-level (1+ indent-level)))
+        (indent-line-to (* groovy-indent-offset indent-level)))))
     ;; Point is now at the beginning of indentation, restore it
     ;; to its original position (relative to indentation).
     (when (>= point-offset 0)

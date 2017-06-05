@@ -26,3 +26,11 @@ bar()
    "def foo() {
     bar()
 }"))
+
+(ert-deftest groovy-indent-infix-operator ()
+  "We should increase indent after infix operators."
+  (should-indent
+   "def a = b +
+1"
+   "def a = b +
+    1"))
