@@ -1,5 +1,6 @@
 (require 'ert)
-(require 'groovy-mode)
+
+(load-file "groovy-mode.el")
 
 (ert-deftest groovy-smoke-test ()
   "Ensure that we can activate the Groovy major mode."
