@@ -34,3 +34,11 @@ bar()
 1"
    "def a = b +
     1"))
+
+(ert-deftest groovy-indent-method-call ()
+  "We should increase indent for method calls"
+  (should-indent
+   "foo
+.bar()"
+   "foo
+    .bar()"))

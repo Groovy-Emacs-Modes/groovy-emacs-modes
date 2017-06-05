@@ -475,12 +475,19 @@ dollar-slashy-quoted strings."
      (t
       (let ((indent-level current-paren-depth)
             prev-line)
+        ;; If the previous line ended `foo +` then this line should be
+        ;; indented one more level.
         (save-excursion
           ;; Try to go back one line.
           (when (zerop (forward-line -1))
             (setq prev-line (buffer-substring (point) (line-end-position)))))
         (when (and prev-line (groovy--ends-with-infix-p prev-line))
           (setq indent-level (1+ indent-level)))
+        ;; If this line is .methodCall() then we should indent one
+        ;; more level.
+        (when (s-starts-with-p "." current-line)
+          (setq indent-level (1+ indent-level)))
+        
         (indent-line-to (* groovy-indent-offset indent-level)))))
     ;; Point is now at the beginning of indentation, restore it
     ;; to its original position (relative to indentation).
