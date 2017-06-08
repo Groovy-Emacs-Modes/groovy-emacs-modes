@@ -13,6 +13,7 @@
   `(with-temp-buffer
      (insert ,source)
      (groovy-mode)
+     (setq indent-tabs-mode nil)
      (shut-up
        (indent-region (point-min) (point-max)))
      (should (equal (buffer-string) ,result))))
