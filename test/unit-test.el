@@ -42,3 +42,40 @@ bar()
 .bar()"
    "foo
     .bar()"))
+
+(ert-deftest groovy-indent-switch ()
+  "We should indent case statements less than their bodies."
+  (should-indent
+   "switch (foo) {
+case Class1:
+bar()
+break
+default:
+baz()
+}"
+   "switch (foo) {
+    case Class1:
+        bar()
+        break
+    default:
+        baz()
+}")
+  (should-indent
+   "switch (foo) {
+    case Class1:
+        if (bar) {
+            bar()
+    }
+        break
+    default:
+        baz()
+}"
+   "switch (foo) {
+    case Class1:
+        if (bar) {
+            bar()
+        }
+        break
+    default:
+        baz()
+}"))

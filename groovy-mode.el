@@ -423,13 +423,46 @@ dollar-slashy-quoted strings."
         "==" "!=" "<" "<=" ">" ">=" "<<=" ">>=" ">>>=" "&=" "^=" "|="
         "&&" "!!"
         "&" "|" "^" "<<" "<<<" ">>" ">>>"
-        "?" "?:" ":"
+        ;; Use " :" to avoid confusing `x ? y : z' with `foo:' in a
+        ;; switch block.
+        "?" "?:" " :"
         "=~" "==~"
         "<=>" "<>"
         "in" "as")
     (0+ space)
     line-end)
    str))
+
+(defun groovy--current-line ()
+  "The current line enclosing point."
+  (buffer-substring-no-properties
+   (line-beginning-position) (line-end-position)))
+
+(defun groovy--enclosing-blocks ()
+  "Return a list of the block keywords that enclose point.
+
+Given the code, where | is point:
+
+def foo() {
+  if (bar) {
+    switch (baz) {
+      |
+    }
+  }
+}
+
+Then this function returns (\"def\" \"if\" \"switch\")."
+  (let (enclosing-paren-pos blocks)
+    (save-excursion
+      (setq enclosing-paren-pos (nth 1 (syntax-ppss)))
+      (while enclosing-paren-pos
+        (goto-char enclosing-paren-pos)
+        (let* ((line (s-trim (groovy--current-line)))
+               (symbols (s-split (rx symbol-end) line t))
+               (symbol (car-safe symbols)))
+          (push symbol blocks))
+        (setq enclosing-paren-pos (nth 1 (syntax-ppss)))))
+    blocks))
 
 (defun groovy-indent-line ()
   "Indent the current line according to the number of parentheses."
@@ -439,8 +472,7 @@ dollar-slashy-quoted strings."
          (multiline-string-p (nth 3 syntax-bol))
          (multiline-comment-p (nth 4 syntax-bol))
          (current-paren-depth (car syntax-bol))
-         (current-line (s-trim (buffer-substring (line-beginning-position)
-                                                 (line-end-position)))))
+         (current-line (s-trim (groovy--current-line))))
     ;; If this line starts with a closing paren, unindent by one level.
     ;;   if {
     ;;   } <- this should not be indented.
@@ -476,10 +508,32 @@ dollar-slashy-quoted strings."
             (setq prev-line (buffer-substring (point) (line-end-position)))))
         (when (and prev-line (groovy--ends-with-infix-p prev-line))
           (setq indent-level (1+ indent-level)))
+
         ;; If this line is .methodCall() then we should indent one
         ;; more level.
         (when (s-starts-with-p "." current-line)
           (setq indent-level (1+ indent-level)))
+
+        ;; If we're inside a switch statement, we should indent
+        ;; another level after case labels, e.g.
+        ;; case foo:
+        ;;     bar // <- extra indent
+        (let ((blocks (groovy--enclosing-blocks))
+              (switch-count 0))
+          (dolist (block-symbol blocks)
+            (when (equal block-symbol "switch")
+              (setq switch-count (1+ switch-count))))
+          (when (> switch-count 0)
+            (setq indent-level (+ indent-level switch-count))
+            ;; The `case foo:' line should be indented less than the body.
+            (when (s-ends-with-p ":" current-line)
+              (setq indent-level (1- indent-level)))
+            ;; The extra indent does not apply to the } closing the
+            ;; switch block.
+            (when (and
+                   (equal (car (last blocks)) "switch")
+                   (equal current-line "}"))
+              (setq indent-level (1- indent-level)))))
         
         (indent-line-to (* groovy-indent-offset indent-level)))))
     ;; Point is now at the beginning of indentation, restore it
