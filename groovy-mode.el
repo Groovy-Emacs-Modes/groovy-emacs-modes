@@ -423,9 +423,7 @@ dollar-slashy-quoted strings."
         "==" "!=" "<" "<=" ">" ">=" "<<=" ">>=" ">>>=" "&=" "^=" "|="
         "&&" "!!"
         "&" "|" "^" "<<" "<<<" ">>" ">>>"
-        ;; Use " :" to avoid confusing `x ? y : z' with `foo:' in a
-        ;; switch block.
-        "?" "?:" " :"
+        "?" "?:" ":"
         "=~" "==~"
         "<=>" "<>"
         "in" "as")
@@ -463,6 +461,12 @@ Then this function returns (\"def\" \"if\" \"switch\")."
           (push symbol blocks))
         (setq enclosing-paren-pos (nth 1 (syntax-ppss)))))
     blocks))
+
+(defconst groovy--case-regexp
+  (rx (or
+       (seq "case" symbol-end (+ any))
+       (seq "default" symbol-end))
+      ":"))
 
 (defun groovy-indent-line ()
   "Indent the current line according to the number of parentheses."
@@ -506,7 +510,9 @@ Then this function returns (\"def\" \"if\" \"switch\")."
           ;; Try to go back one line.
           (when (zerop (forward-line -1))
             (setq prev-line (buffer-substring (point) (line-end-position)))))
-        (when (and prev-line (groovy--ends-with-infix-p prev-line))
+        (when (and prev-line
+                   (groovy--ends-with-infix-p prev-line)
+                   (not (s-matches-p groovy--case-regexp prev-line)))
           (setq indent-level (1+ indent-level)))
 
         ;; If this line is .methodCall() then we should indent one
@@ -526,7 +532,7 @@ Then this function returns (\"def\" \"if\" \"switch\")."
           (when (> switch-count 0)
             (setq indent-level (+ indent-level switch-count))
             ;; The `case foo:' line should be indented less than the body.
-            (when (s-ends-with-p ":" current-line)
+            (when (s-matches-p groovy--case-regexp current-line)
               (setq indent-level (1- indent-level)))
             ;; The extra indent does not apply to the } closing the
             ;; switch block.

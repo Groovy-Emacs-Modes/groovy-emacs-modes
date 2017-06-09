@@ -48,6 +48,7 @@ bar()
 
 (ert-deftest groovy-indent-switch ()
   "We should indent case statements less than their bodies."
+  ;; Simple switch statement
   (should-preserve-indent
    "switch (foo) {
     case Class1:
@@ -56,6 +57,7 @@ bar()
     default:
         baz()
 }")
+  ;; Braces within switch statements.
   (should-preserve-indent
    "switch (foo) {
     case Class1:
@@ -65,4 +67,16 @@ bar()
         break
     default:
         baz()
-}"))
+}")
+  ;; Ensure we handle colons correctly.
+  (should-preserve-indent
+   "switch (foo) {
+    case Class1 :
+        bar()
+}")
+  (should-preserve-indent
+   "switch (foo) {
+    case Class1:
+        x? y: z
+}")
+  )
