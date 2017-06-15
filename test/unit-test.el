@@ -40,6 +40,15 @@ bar()
    "def a = b +
     1"))
 
+(ert-deftest groovy-indent-infix-closure ()
+  "We should only indent by one level inside closures."
+  (should-preserve-indent
+   "def foo() {
+    def f = { ->
+        \"foo\"
+    }
+}"))
+
 (ert-deftest groovy-indent-method-call ()
   "We should increase indent for method calls"
   (should-preserve-indent

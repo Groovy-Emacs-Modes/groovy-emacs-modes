@@ -417,6 +417,7 @@ dollar-slashy-quoted strings."
   "Does STR end with an infix operator?"
   (string-match-p
    (rx
+    symbol-start
     ;; http://docs.groovy-lang.org/next/html/documentation/core-operators.html
     (or "+" "-" "*" "/" "%" "**"
         "=" "+=" "-=" "*=" "/=" "%=" "**="
