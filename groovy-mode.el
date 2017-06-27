@@ -411,6 +411,7 @@ dollar-slashy-quoted strings."
 
 (defcustom groovy-indent-offset 4
   "Indentation amount for Groovy."
+  :safe #'integerp
   :group 'groovy)
 
 (defun groovy--ends-with-infix-p (str)
@@ -541,7 +542,7 @@ Then this function returns (\"def\" \"if\" \"switch\")."
                    (equal (car (last blocks)) "switch")
                    (equal current-line "}"))
               (setq indent-level (1- indent-level)))))
-        
+
         (indent-line-to (* groovy-indent-offset indent-level)))))
     ;; Point is now at the beginning of indentation, restore it
     ;; to its original position (relative to indentation).
