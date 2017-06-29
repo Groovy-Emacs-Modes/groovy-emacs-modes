@@ -38,6 +38,9 @@ bar()
   "We should increase indent after infix operators."
   (should-preserve-indent
    "def a = b +
+    1")
+  (should-preserve-indent
+   "def a = b+
     1"))
 
 (ert-deftest groovy-indent-infix-closure ()
