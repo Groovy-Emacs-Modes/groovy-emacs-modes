@@ -138,7 +138,6 @@
   ;;(define-key groovy-mode-map "\C-c\C-b" 'groovy-send-block-and-go)
   (define-key groovy-mode-map "\C-c\M-d" 'groovy-send-definition)
   (define-key groovy-mode-map "\C-c\C-x" 'groovy-send-definition-and-go)
-  (define-key groovy-mode-map "\C-c\C-x" 'groovy-send-definition-and-go)
   (define-key groovy-mode-map "\C-c\M-r" 'groovy-send-region)
   (define-key groovy-mode-map "\C-c\C-r" 'groovy-send-region-and-go)
   (define-key groovy-mode-map "\C-c\C-z" 'switch-to-groovy)
@@ -420,7 +419,7 @@ next one.")
   (comint-check-source file-name) ; Check to see if buffer needs saved.
   (setq groovy-prev-l/c-dir/file (cons (file-name-directory    file-name)
 				       (file-name-nondirectory file-name)))
-  (comint-send-string (groovy-proc) (concat "\\i "
+  (comint-send-string (groovy-proc) (concat ":l "
 					    file-name
 					    "\n")))
 
