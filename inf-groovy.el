@@ -53,13 +53,12 @@
 ;;             (inf-groovy-keys)
 ;;    ))
 ;;
-;;    ;; can set groovy-home here, if not in environment
-;;    (setq inferior-groovy-mode-hook
-;;        '(lambda()
-;;           (setq groovy-home "/Users/sclayman/Downloads/groovy-1.7.1/")
-;;           ))
+;; (3) If groovysh isn't on $PATH and you haven't set $GROOVY_HOME,
+;; you need to tell Emacs where groovysh is.
 ;;
-;; (3) execute
+;;    (setq groovysh "/Users/sclayman/Downloads/groovy-1.7.1/bin/groovysh")
+;;
+;; (4) execute
 ;;      M-x run-groovy
 
 ;;; Commentary
@@ -90,14 +89,21 @@
 (require 'groovy-mode)
 
 
-(defvar groovysh (executable-find "groovysh"))
+(defcustom groovysh
+  (or
+   ;; If groovysh in on $PATH, use that by default.
+   (executable-find "groovysh")
+   ;; Fall back to $GROOVY_HOME if the user has set that.
+   (executable-find
+    (format "%s/bin/groovysh" (or (getenv "GROOVY_HOME") ""))))
+  "The path to the groovysh binary, used by `run-groovy'."
+  :group 'groovy)
+
+(defcustom groovysh-args
+  "--color=false"
+  "Arguments passed to groovysh when starting an inferior groovy buffer.")
 
 ;;;; for groovy
-(defvar groovy-home (getenv "GROOVY_HOME"))
-
-(defvar groovy-program-name "groovysh --color=false"
-  "*Program invoked by the run-groovy command")
-
 (defvar inferior-groovy-first-prompt-pattern "^groovy:.*> *"
   "first prompt regex pattern of groovy interpreter.")
 
@@ -240,17 +246,21 @@ Defaults to a regexp ignoring all inputs of 0, 1, or 2 letters.")
 ;;;###autoload
 (defun run-groovy (cmd)
   "Run an inferior Groovy process, input and output via buffer *groovy*.
-If there is a process already running in `*groovy*', switch to that buffer.
-With argument, allows you to edit the command line (default is value
-of `groovy-program-name').  Runs the hooks `inferior-groovy-mode-hook'
-\(after the `comint-mode-hook' is run).
-\(Type \\[describe-mode] in the process buffer for a list of commands.)"
+If there is a process already running in *groovy*, switch to that buffer.
+With a prefix argument, prompt for the groovysh path and arguments
+\(see variables `groovysh' and `groovysh-args' for the defaults).
 
-  (interactive (list (if current-prefix-arg
-                         (read-string "Run Groovy: " groovy-program-name)
-                       (if groovysh
-                           (concat groovysh " --color=false")
-                         (concat groovy-home "/bin/" groovy-program-name)))))
+Runs the hook `inferior-groovy-mode-hook' (after the
+`comint-mode-hook' is run).  Type \\[describe-mode] in the
+process buffer for a list of commands."
+  (interactive (list
+                (format "%s %s"
+                        (if current-prefix-arg
+                            (read-file-name "groovysh binary: " groovysh)
+                          groovysh)
+                        (if current-prefix-arg
+                            (read-string "groovysh arguments: " groovysh-args)
+                          groovysh-args))))
   (if (not (comint-check-proc "*groovy*"))
       (let ((cmdlist (groovy-args-to-list cmd)))
         (set-buffer (apply 'make-comint "groovy" (car cmdlist)
