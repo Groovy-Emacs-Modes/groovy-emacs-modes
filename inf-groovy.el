@@ -12,6 +12,7 @@
 ;; Maintainer: Russel Winder <russel@winder.org.uk>
 ;; Version: 201705161954
 ;; Keywords: languages
+;; Package-Requires: ((groovy-mode "0"))
 
 ;;;; NB Version number is date and time yyyymmddhhMM UTC.
 
@@ -27,9 +28,6 @@
 ;;
 ;;  You should have received a copy of the GNU General Public License
 ;;  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-;;; depends on
-;; groovy-mode
 
 ;;; Usage:
 ;;  If you install using the packaging system no further set up should be needed. If you install this mode
