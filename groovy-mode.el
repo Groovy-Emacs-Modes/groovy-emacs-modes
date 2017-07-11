@@ -305,8 +305,10 @@ The function name is the second group in the regexp.")
   ;; http://groovy-lang.org/syntax.html#_shebang_line
   (defconst groovy-shebang-regex
     (rx buffer-start "#"))
-  (defconst groovy-triple-quoted-string-regex
+  (defconst groovy-triple-double-quoted-string-regex
     (rx "\"\"\""))
+  (defconst groovy-triple-single-quoted-string-regex
+    (rx "'''"))
   (defconst groovy-dollar-slashy-open-regex
     (rx "$/"))
   (defconst groovy-dollar-slashy-close-regex
@@ -314,6 +316,7 @@ The function name is the second group in the regexp.")
 
 (defun groovy-stringify-triple-quote ()
   "Put `syntax-table' property on triple-quoted strings."
+  ;; This applies to both ''' and """
   (let* ((string-end-pos (point))
          (string-start-pos (- string-end-pos 3))
          (ppss (prog2
@@ -323,11 +326,11 @@ The function name is the second group in the regexp.")
     (unless (nth 4 ppss) ;; not inside comment
       (if (nth 8 ppss)
           ;; We're in a string, so this must be the closing triple-quote.
-          ;; Put | on the last " character.
+          ;; Put | on the last ' or " character.
           (put-text-property (1- string-end-pos) string-end-pos
                              'syntax-table (string-to-syntax "|"))
         ;; We're not in a string, so this is the opening triple-quote.
-        ;; Put | on the first " character.
+        ;; Put | on the first ' or " character.
         (put-text-property string-start-pos (1+ string-start-pos)
                            'syntax-table (string-to-syntax "|"))))))
 
@@ -394,7 +397,9 @@ dollar-slashy-quoted strings."
    ;; comment.
    (groovy-shebang-regex
     (0 "< b"))
-   (groovy-triple-quoted-string-regex
+   (groovy-triple-double-quoted-string-regex
+    (0 (ignore (groovy-stringify-triple-quote))))
+   (groovy-triple-single-quoted-string-regex
     (0 (ignore (groovy-stringify-triple-quote))))
    ;; http://groovy-lang.org/syntax.html#_dollar_slashy_string
    (groovy-dollar-slashy-open-regex

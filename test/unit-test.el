@@ -1,5 +1,6 @@
 (require 'ert)
 (require 'shut-up)
+(require 'faces)
 (require 'groovy-mode)
 
 (ert-deftest groovy-smoke-test ()
@@ -92,3 +93,30 @@ bar()
         x? y: z
 }")
   )
+
+(defmacro with-highlighted-groovy (src &rest body)
+  "Insert SRC in a temporary groovy-mode buffer, apply syntax highlighting,
+then run BODY."
+  (declare (indent 1) (debug t))
+  `(with-temp-buffer
+     (insert ,src)
+     (goto-char (point-min))
+     ;; Activate groovy-mode, but don't run any hooks. This doesn't
+     ;; matter on Travis, but is defensive when running tests in the
+     ;; current Emacs instance.
+     (delay-mode-hooks (groovy-mode))
+     ;; Ensure we've syntax-highlighted the whole buffer.
+     (font-lock-ensure (point-min) (point-max))
+     ,@body))
+
+(ert-deftest groovy-highlight-triple-double-quote ()
+  "Ensure we handle single \" correctly inside a triple-double-quoted string."
+  (with-highlighted-groovy "x = \"\"\"foo \" bar \"\"\""
+    (search-forward "bar")
+    (should (eq (face-at-point) 'font-lock-string-face))))
+
+(ert-deftest groovy-highlight-triple-single-quote ()
+  "Ensure we handle single \" correctly inside a triple-double-quoted string."
+  (with-highlighted-groovy "x = '''foo ' bar '''"
+    (search-forward "bar")
+    (should (eq (face-at-point) 'font-lock-string-face))))
