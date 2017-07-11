@@ -144,3 +144,19 @@ then run BODY."
   (with-highlighted-groovy "x = '''$foo'''"
     (search-forward "$")
     (should (equal '(font-lock-string-face) (faces-at-point)))))
+
+(ert-deftest groovy-highlight-comments ()
+  "Ensure we do not confuse comments with slashy strings."
+  (with-highlighted-groovy "// foo"
+    (search-forward " ")
+    (should (memq 'font-lock-comment-face (faces-at-point))))
+  ;; // on a single line is a comment, not an empty slashy-string.
+  (with-highlighted-groovy "// foo\n//\n"
+    (search-forward "\n")
+    (should (memq 'font-lock-comment-face (faces-at-point)))))
+
+(ert-deftest groovy-highlight-slashy-string ()
+  "Highlight /foo/ as a string."
+  (with-highlighted-groovy "x = /foo/"
+    (search-forward "foo")
+    (should (memq 'font-lock-string-face (faces-at-point)))))

@@ -310,6 +310,9 @@ The function name is the second group in the regexp.")
     (rx "\"\"\""))
   (defconst groovy-triple-single-quoted-string-regex
     (rx "'''"))
+  (defconst groovy-slashy-open-regex
+    ;; /foo/ is a slashy-string, but // is not.
+    (rx "/" (not (any "/"))))
   (defconst groovy-dollar-slashy-open-regex
     (rx "$/"))
   (defconst groovy-dollar-slashy-close-regex
@@ -340,14 +343,15 @@ The function name is the second group in the regexp.")
   (nth 4 (syntax-ppss pos)))
 
 (defun groovy-stringify-slashy-string ()
-  "Put `syntax-table' property on slashy-quoted strings."
+  "Put `syntax-table' property on slashy-quoted strings (strings
+of the form /foo/)."
+  ;; We match to characters ?/ ?something, so move backwards so point
+  ;; is on the /.
+  (backward-char 1)
   (let* ((slash-pos (point))
-         ;; Look at the syntax one char forward: if we're in a
-         ;; comment, then this is a // not a /foo/.
-         (singleline-comment (prog2
-                                 (forward-char 1)
-                                 (groovy--comment-p (point))
-                               (backward-char 1)))
+         ;; Look at the previous char: // is a comment, not an empty
+         ;; slashy-string.
+         (singleline-comment (eq (char-before (1- (point))) ?/))
          ;; Look at this syntax on the previous char: if we're on a /*
          ;; or a */ this isn't a slashy-string.
          (multiline-comment (prog2
@@ -408,7 +412,7 @@ dollar-slashy-quoted strings."
    (groovy-dollar-slashy-close-regex
     (0 (ignore (groovy-stringify-dollar-slashy-close))))
    ;; http://groovy-lang.org/syntax.html#_slashy_string
-   ("/"
+   (groovy-slashy-open-regex
     (0 (ignore (groovy-stringify-slashy-string))))))
 
 (defgroup groovy nil
