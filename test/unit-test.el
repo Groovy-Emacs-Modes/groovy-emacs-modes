@@ -120,3 +120,27 @@ then run BODY."
   (with-highlighted-groovy "x = '''foo ' bar '''"
     (search-forward "bar")
     (should (eq (face-at-point) 'font-lock-string-face))))
+
+(defun faces-at-point ()
+  (let* ((props (text-properties-at (point)))
+         (faces (plist-get props 'face)))
+    (if (listp faces) faces (list faces))))
+
+(ert-deftest groovy-highlight-interpolation ()
+  "Ensure we highlight interpolation in double-quoted strings."
+  (with-highlighted-groovy "x = \"$foo\""
+    (search-forward "$")
+    (should (memq 'font-lock-variable-name-face (faces-at-point))))
+  (with-highlighted-groovy "x = \"\"\"$foo\"\"a\""
+    (search-forward "$")
+    (should (memq 'font-lock-variable-name-face (faces-at-point)))))
+
+(ert-deftest groovy-highlight-interpolation-single-quotes ()
+  "Ensure we do not highlight interpolation in single-quoted strings."
+  (with-highlighted-groovy "x = '$foo'"
+    (search-forward "$")
+    ;; This should be highlighted as a string, nothing else.
+    (should (equal '(font-lock-string-face) (faces-at-point))))
+  (with-highlighted-groovy "x = '''$foo'''"
+    (search-forward "$")
+    (should (equal '(font-lock-string-face) (faces-at-point)))))
