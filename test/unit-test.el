@@ -42,7 +42,11 @@ bar()
     1")
   (should-preserve-indent
    "def a = b+
-    1"))
+    1")
+  ;; Don't get confused by commented-out lines.
+  (should-preserve-indent
+   "// def a = b+
+1"))
 
 (ert-deftest groovy-indent-infix-closure ()
   "We should only indent by one level inside closures."

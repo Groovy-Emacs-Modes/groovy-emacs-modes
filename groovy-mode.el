@@ -340,7 +340,8 @@ The function name is the second group in the regexp.")
 
 (defun groovy--comment-p (pos)
   "Return t if POS is in a comment."
-  (nth 4 (syntax-ppss pos)))
+  (save-excursion
+    (nth 4 (syntax-ppss pos))))
 
 (defun groovy-stringify-slashy-string ()
   "Put `syntax-table' property on slashy-quoted strings (strings
@@ -521,7 +522,9 @@ Then this function returns (\"def\" \"if\" \"switch\")."
         (save-excursion
           ;; Try to go back one line.
           (when (zerop (forward-line -1))
-            (setq prev-line (buffer-substring (point) (line-end-position)))))
+            ;; Ignore the previous line if it's a comment.
+            (unless (groovy--comment-p (line-end-position))
+              (setq prev-line (buffer-substring (point) (line-end-position))))))
         (when (and prev-line
                    (groovy--ends-with-infix-p prev-line)
                    (not (s-matches-p groovy--case-regexp prev-line)))
