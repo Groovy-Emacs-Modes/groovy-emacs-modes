@@ -340,7 +340,8 @@ The function name is the second group in the regexp.")
 
 (defun groovy--comment-p (pos)
   "Return t if POS is in a comment."
-  (nth 4 (syntax-ppss pos)))
+  (save-excursion
+    (nth 4 (syntax-ppss pos))))
 
 (defun groovy-stringify-slashy-string ()
   "Put `syntax-table' property on slashy-quoted strings (strings
