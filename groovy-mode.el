@@ -168,7 +168,12 @@ The function name is the second group in the regexp.")
   "Match 'def foo' or 'private Type foo'. The name is the second group.")
 
 (defsubst groovy--in-string-p ()
+  "Return t if (point) is in a string."
   (nth 3 (syntax-ppss)))
+(defsubst groovy--in-string-at-p (pos)
+  "Return t if POS is in a string."
+  (save-excursion
+    (nth 3 (syntax-ppss pos))))
 
 (defvar groovy-font-lock-keywords
   `((,(regexp-opt
@@ -311,8 +316,9 @@ The function name is the second group in the regexp.")
   (defconst groovy-triple-single-quoted-string-regex
     (rx "'''"))
   (defconst groovy-slashy-open-regex
-    ;; /foo/ is a slashy-string, but // is not.
-    (rx "/" (not (any "/"))))
+    ;; /foo/ is a slashy-string, but // or /* are not.
+    (rx "/" (not (any "/" "*"))))
+
   (defconst groovy-dollar-slashy-open-regex
     (rx "$/"))
   (defconst groovy-dollar-slashy-close-regex
@@ -348,34 +354,51 @@ The function name is the second group in the regexp.")
 of the form /foo/)."
   ;; We match to characters ?/ ?something, so move backwards so point
   ;; is on the /.
-  (backward-char 1)
-  (let* ((slash-pos (point))
-         ;; Look at the previous char: // is a comment, not an empty
-         ;; slashy-string.
-         (singleline-comment (eq (char-before (1- (point))) ?/))
-         ;; Look at this syntax on the previous char: if we're on a /*
-         ;; or a */ this isn't a slashy-string.
-         (multiline-comment (prog2
-                                (backward-char 1)
-                                (groovy--comment-p (point))
-                              (forward-char 1)))
-         (string-open-pos (nth 8 (syntax-ppss))))
-    (unless (or singleline-comment multiline-comment)
-      (if string-open-pos
-          ;; If we're in a string, that was opened with /, then this
-          ;; is the closing /. This prevents confusion with """ /* """
-          (when (eq (char-after string-open-pos) ?/)
-            (put-text-property (1- slash-pos) slash-pos
-                               'syntax-table (string-to-syntax "|")))
-        ;; We're not in a string, so this is the opening /.
-        (put-text-property (1- slash-pos) slash-pos
-                           'syntax-table (string-to-syntax "|"))))))
+  (save-excursion
+    (backward-char 1)
+    (let* ((slash-pos (point))
+           ;; Look at the previous char: // is a comment, not an empty
+           ;; slashy-string.
+           (singleline-comment (eq (char-before (1- (point))) ?/))
+           ;; Look at this syntax on the previous char: if we're on a /*
+           ;; or a */ this isn't a slashy-string.
+           (multiline-comment (prog2
+                                  (backward-char 1)
+                                  (groovy--comment-p (point))
+                                (forward-char 1)))
+           (string-open-pos (nth 8 (syntax-ppss))))
+
+      (unless (or singleline-comment multiline-comment)
+        (if string-open-pos
+            ;; If we're in a string, that was opened with /, then this
+            ;; is the closing /. This prevents confusion with """ /* """
+            (when (eq (char-after string-open-pos) ?/)
+              (put-text-property (1- slash-pos) slash-pos
+                                 'syntax-table (string-to-syntax "|")))
+          ;; We're not in a string, so this is the opening / or division
+          (let ((str (buffer-substring-no-properties (line-beginning-position) slash-pos)))
+            ;; test if operator precedes slash. if so, slashy-string, otherwise division and ignore
+            (when (string-match
+                   (rx
+                    (or bol
+                        (or "+" "-" "=" "+=" "-=" "==" "!="
+                            "<" "<=" ">" ">=" "&&" "!!" "?" "?:" ":"
+                            "=~" "==~" "<=>" "("))
+                    (0+ whitespace)
+                    "/"
+                    eol)
+                   str)
+              (put-text-property (1- slash-pos) slash-pos
+                                 'syntax-table (string-to-syntax "|")))))))))
 
 (defun groovy-stringify-dollar-slashy-open ()
   "Put `syntax-table' property on the opening $/ of
 dollar-slashy-quoted strings."
   (let ((delimiter-end-pos (point)))
-    (unless (or (groovy--comment-p delimiter-end-pos) (groovy--in-string-p))
+    (if (or (groovy--comment-p delimiter-end-pos) (groovy--in-string-p))
+        ;; if not $/ open comment then go back a char so we can test
+        ;;   if it's a closing slashy-string /
+        (backward-char 1)
       ;; Mark the $ in $/ as a generic string delimiter.
       (put-text-property (- delimiter-end-pos 2) (- delimiter-end-pos 1)
                          'syntax-table (string-to-syntax "|")))))
@@ -395,6 +418,7 @@ dollar-slashy-quoted strings."
       ;; Mark the $ in /$ as a generic string delimiter.
       (put-text-property (- delimiter-end-pos 1) delimiter-end-pos
                          'syntax-table (string-to-syntax "|")))))
+
 
 (defconst groovy-syntax-propertize-function
   (syntax-propertize-rules
@@ -516,16 +540,23 @@ Then this function returns (\"def\" \"if\" \"switch\")."
      ;; Indent according to the number of parens.
      (t
       (let ((indent-level current-paren-depth)
-            prev-line)
+            prev-line
+            end-slashy-string)
         ;; If the previous line ended `foo +` then this line should be
         ;; indented one more level.
         (save-excursion
           ;; Try to go back one line.
           (when (zerop (forward-line -1))
-            ;; Ignore the previous line if it's a comment.
-            (unless (groovy--comment-p (line-end-position))
-              (setq prev-line (buffer-substring (point) (line-end-position))))))
+            ;; Ignore the previous line if it's a comment or end slashy-string
+            (let ((line-end (line-end-position)))
+              (unless (groovy--comment-p line-end)
+                (setq prev-line (buffer-substring (point) (line-end-position))))
+              ;; check if the last thing is a slashy-string end
+              (setq end-slashy-string (and
+                                       (eq (char-before line-end) ?/)
+                                       (groovy--in-string-at-p (- line-end 1)))))))
         (when (and prev-line
+                   (not end-slashy-string)
                    (groovy--ends-with-infix-p prev-line)
                    (not (s-matches-p groovy--case-regexp prev-line)))
           (setq indent-level (1+ indent-level)))

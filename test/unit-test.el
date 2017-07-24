@@ -46,6 +46,10 @@ bar()
   ;; Don't get confused by commented-out lines.
   (should-preserve-indent
    "// def a = b+
+1")
+  ;; Don't get confused by lines that end by / when it isn't division.
+  (should-preserve-indent
+   "def x = /foo/
 1"))
 
 (ert-deftest groovy-indent-infix-closure ()
@@ -161,6 +165,21 @@ then run BODY."
 
 (ert-deftest groovy-highlight-slashy-string ()
   "Highlight /foo/ as a string."
+  ;; simple case
   (with-highlighted-groovy "x = /foo/"
     (search-forward "foo")
-    (should (memq 'font-lock-string-face (faces-at-point)))))
+    (should (memq 'font-lock-string-face (faces-at-point))))
+  ;; multiline
+  (with-highlighted-groovy "x = \"bar\" + /foo\nbaz/"
+    (search-forward "foo")
+    (should (memq 'font-lock-string-face (faces-at-point))))
+  ;; division is not a multiline string
+  (with-highlighted-groovy "x = y / z"
+    (search-forward "z")
+    (forward-char -1)
+    (should (not (memq 'font-lock-string-face (faces-at-point)))))
+  ;; Don't get confused by ending with $/.
+  (with-highlighted-groovy "x = /foo$/ + bar"
+    (search-forward "bar")
+    (forward-char -1)
+    (should (not (memq 'font-lock-string-face (faces-at-point))))))
