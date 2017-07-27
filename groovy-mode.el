@@ -78,8 +78,11 @@
     table)
   "Syntax table used in Groovy mode buffers.")
 
-;;;###autoload (add-to-list 'auto-mode-alist '("\\.g\\(?:ant\\|roovy\\|radle\\)\\'\\|Jenkinsfile\\'" . groovy-mode))
-;;;###autoload (add-to-list 'interpreter-mode-alist '("groovy" . groovy-mode))
+;;;###autoload
+(add-to-list 'auto-mode-alist '("\\.g\\(?:ant\\|roovy\\|radle\\)\\'" . groovy-mode))
+(add-to-list 'auto-mode-alist '("Jenkinsfile" . groovy-mode))
+;;;###autoload
+(add-to-list 'interpreter-mode-alist '("groovy" . groovy-mode))
 
 (defconst groovy-type-regexp
   (rx symbol-start
