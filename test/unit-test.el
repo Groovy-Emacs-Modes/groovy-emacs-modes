@@ -102,6 +102,21 @@ bar()
 }")
   )
 
+(ert-deftest groovy-indent-list ()
+  "Ensure we handle indents inside lists correctly."
+  ;; If we have a single empty [ on a line, we should increase by one
+  ;; tab stop.
+  (should-preserve-indent "def x = [
+    1,
+    2,
+]")
+  ;; But if we have values after the [, we should line up subsequent
+  ;; lines.
+  (should-preserve-indent "def x = [1,
+         2,
+         3,
+]"))
+
 (defmacro with-highlighted-groovy (src &rest body)
   "Insert SRC in a temporary groovy-mode buffer, apply syntax highlighting,
 then run BODY."
