@@ -559,7 +559,8 @@ Then this function returns (\"def\" \"if\" \"switch\")."
      ;; correctly.
      ((and (not (s-blank-str? text-after-paren))
            (not has-closing-paren)
-           (not (equal text-after-paren "->")))
+           ;; ensure we don't indent closures
+           (not (string-match (rx "->" eol) text-after-paren)))
       (let (open-paren-column)
         (save-excursion
           (goto-char current-paren-pos)
