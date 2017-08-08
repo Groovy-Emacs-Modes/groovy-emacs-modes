@@ -59,6 +59,12 @@ bar()
     def f = { ->
         \"foo\"
     }
+}")
+  (should-preserve-indent
+   "def foo() {
+    def f = { def bar ->
+        \"foo\"
+    }
 }"))
 
 (ert-deftest groovy-indent-method-call ()
