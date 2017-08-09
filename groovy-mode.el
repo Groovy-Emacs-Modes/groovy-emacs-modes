@@ -58,6 +58,7 @@
 ;;----------------------------------------------------------------------------
 ;;; Code:
 
+(require 'cc-fonts)
 (require 's)
 
 (defvar groovy-mode-syntax-table
@@ -238,7 +239,7 @@ The function name is the second group in the regexp.")
      . font-lock-variable-name-face)
     ;; Annotations
     (,(rx "@" symbol-start (+ (or (syntax word) (syntax symbol))) symbol-end)
-     . c-annotation-face)
+     . groovy-annotation-face)
     (,groovy-type-regexp
      1 font-lock-type-face)
     ;; Highlight function names.
@@ -450,6 +451,12 @@ dollar-slashy-quoted strings."
 (defcustom groovy-indent-offset 4
   "Indentation amount for Groovy."
   :safe #'integerp
+  :group 'groovy)
+
+(defvar groovy-annotation-face 'groovy-annotation-face)
+(defface groovy-annotation-face
+  '((default :inherit font-lock-constant-face))
+  "Face for highlighting annotations in Groovy mode."
   :group 'groovy)
 
 (defun groovy--ends-with-infix-p (str)
