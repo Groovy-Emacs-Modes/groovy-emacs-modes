@@ -150,6 +150,24 @@ then run BODY."
     (search-forward "bar")
     (should (eq (face-at-point) 'font-lock-string-face))))
 
+(ert-deftest groovy-highlight-annotation ()
+  "Highlight annotations correctly."
+  (with-highlighted-groovy
+   "@Test() private foo = 1"
+   (search-forward "Text")
+   (should (eq (face-at-point) 'groovy-annotation-face))))
+
+(ert-deftest groovy-highlight-interface-keyword ()
+  "Highlight interface as annotation or keyword depending on state."
+  (with-highlighted-groovy
+   "public @interface() Anno {}"
+   (search-forward "interface")
+   (should (eq (face-at-point) 'groovy-annotation-face)))
+  (with-highlighted-groovy
+   "public interface Interface1 {}"
+   (search-forward "interface")
+   (should (eq (face-at-point) 'font-lock-keyword-face))))
+
 (defun faces-at-point ()
   (let* ((props (text-properties-at (point)))
          (faces (plist-get props 'face)))

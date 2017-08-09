@@ -203,7 +203,8 @@ The function name is the second group in the regexp.")
          "import"
          "in"
          "instanceof"
-         "interface"
+         ;; handle this below
+         ;;"interface"
          "new"
          "package"
          "return"
@@ -226,6 +227,9 @@ The function name is the second group in the regexp.")
          "synchronized"
          )
        'symbols)
+     . font-lock-keyword-face)
+    ;; Only highlight as keyword if not the annotation.
+    (,(rx (or bol (not (any "@"))) (group "interface"))
      . font-lock-keyword-face)
     ;; Highlight println as a keyword, but don't highlight foo.println.
     (,(rx (or line-start space)
