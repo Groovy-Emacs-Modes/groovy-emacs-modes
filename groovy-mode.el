@@ -58,7 +58,6 @@
 ;;----------------------------------------------------------------------------
 ;;; Code:
 
-(require 'cc-fonts)
 (require 's)
 
 (defvar groovy-mode-syntax-table
