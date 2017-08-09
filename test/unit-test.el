@@ -154,7 +154,7 @@ then run BODY."
   "Highlight annotations correctly."
   (with-highlighted-groovy
    "@Test() private foo = 1"
-   (search-forward "Text")
+   (search-forward "Test")
    (should (eq (face-at-point) 'groovy-annotation-face))))
 
 (ert-deftest groovy-highlight-interface-keyword ()
