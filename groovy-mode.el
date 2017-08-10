@@ -179,7 +179,11 @@ The function name is the second group in the regexp.")
     (nth 3 (syntax-ppss pos))))
 
 (defvar groovy-font-lock-keywords
-  `((,(regexp-opt
+  ;; Annotations are defined with the @interface, which is a keyword:
+  ;; http://groovy-lang.org/objectorientation.html#_annotation
+  ;; but it's nicer to use annotation highlighting.
+  `(("@interface" . groovy-annotation-face)
+    (,(regexp-opt
        ;; http://docs.groovy-lang.org/latest/html/documentation/#_keywords
        '("as"
          "assert"
@@ -203,8 +207,7 @@ The function name is the second group in the regexp.")
          "import"
          "in"
          "instanceof"
-         ;; handle this below
-         ;;"interface"
+         "interface"
          "new"
          "package"
          "return"
@@ -227,9 +230,6 @@ The function name is the second group in the regexp.")
          "synchronized"
          )
        'symbols)
-     . font-lock-keyword-face)
-    ;; Only highlight as keyword if not the annotation.
-    (,(rx (or bol (not (any "@"))) (group "interface"))
      . font-lock-keyword-face)
     ;; Highlight println as a keyword, but don't highlight foo.println.
     (,(rx (or line-start space)
