@@ -155,6 +155,7 @@ then run BODY."
   (with-highlighted-groovy
    "@Test() private foo = 1"
    (search-forward "Test")
+   (backward-char 1)
    (should (eq (face-at-point) 'groovy-annotation-face))))
 
 (ert-deftest groovy-highlight-interface-keyword ()
@@ -162,10 +163,12 @@ then run BODY."
   (with-highlighted-groovy
    "public @interface() Anno {}"
    (search-forward "interface")
+   (backward-char 1)
    (should (eq (face-at-point) 'groovy-annotation-face)))
   (with-highlighted-groovy
    "public interface Interface1 {}"
    (search-forward "interface")
+   (backward-char 1)
    (should (eq (face-at-point) 'font-lock-keyword-face))))
 
 (defun faces-at-point ()
