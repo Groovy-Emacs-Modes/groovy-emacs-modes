@@ -161,7 +161,7 @@ then run BODY."
 (ert-deftest groovy-highlight-interface-keyword ()
   "Highlight interface as annotation or keyword depending on state."
   (with-highlighted-groovy
-   "public @interface() Anno {}"
+   "public @interface Anno {}"
    (search-forward "interface")
    (backward-char 1)
    (should (eq (face-at-point) 'groovy-annotation-face)))
@@ -224,4 +224,8 @@ then run BODY."
   (with-highlighted-groovy "x = /foo$/ + bar"
     (search-forward "bar")
     (forward-char -1)
-    (should (not (memq 'font-lock-string-face (faces-at-point))))))
+    (should (not (memq 'font-lock-string-face (faces-at-point)))))
+  (with-highlighted-groovy
+   "def bar /* foo */"
+   (search-forward "foo")
+   (should (not (memq 'font-lock-string-face (faces-at-point))))))
