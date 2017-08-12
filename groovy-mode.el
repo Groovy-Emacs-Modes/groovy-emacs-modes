@@ -314,19 +314,17 @@ The function name is the second group in the regexp.")
     (rx "/$")))
 
 ;; TODO: handle def (a, b, c) = [1, 2, 3]
-;; TODO: handle public void fooBar(Test a)
+;; DONE: handle public void fooBar(Test a)
 ;; TODO: don't highlight annotation assignments?
 (defun groovy--variable-names-search (limit)
   "Search for variable names up to LIMIT."
   (let* ((pos (point))
          (pattern (rx-to-string
                    `(seq
-
-                     ;;(seq "(" (+ (not (any ")"))) ")")
                      (seq (or bol space "(" ",")
                           (regexp ,groovy-symbol-regexp))
                      (* space)
-                     (or "=" ";" eol))))
+                     (or "=" ";" ")" eol))))
          (matched (re-search-forward pattern limit t)))
     (when (and matched (> matched pos))
       (if (and (not (groovy--in-string-p))
@@ -352,7 +350,8 @@ The function name is the second group in the regexp.")
                                    (seq "@" (+ alphanumeric))
                                    (regexp ,groovy-type-regexp)))))
                        str))))))
-          t ;; we have a match
+          ;; we have a match
+          t
         ;; keep searching
         (groovy--variable-names-search limit)))))
 
