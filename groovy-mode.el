@@ -313,7 +313,6 @@ The function name is the second group in the regexp.")
   (defconst groovy-dollar-slashy-close-regex
     (rx "/$")))
 
-;; TODO: handle def (a, b, c) = [1, 2, 3]
 (defun groovy--variable-names-search (limit)
   "Search for variable names up to LIMIT."
   (let* ((pos (point))
@@ -322,32 +321,33 @@ The function name is the second group in the regexp.")
                      (seq (or bol space "(" ",")
                           (regexp ,groovy-symbol-regexp))
                      (* space)
-                     (or "=" ";" ")" eol))))
+                     (or "=" ";" ")" "," eol))))
          (matched (re-search-forward pattern limit t)))
     (when (and matched (> matched pos))
       (if (and (not (groovy--in-string-p))
                (not (groovy--comment-p matched))
-               ;; if ends in = (and not == or =~) then it's a var assignment, highlight
-               (let ((str (buffer-substring-no-properties (line-beginning-position) (match-beginning 0))))
-                 (message "str: %s" str)
-                 (if (s-ends-with-p "=" (match-string 0))
-                     (let ((next-char (char-to-string (char-after (match-end 0)))))
-                       (and (not (equal next-char "="))
-                            (not (equal next-char "~"))
-                            ;; make sure this isn't in an annotation
-                            (save-match-data
+               ;; if ends in '=' (and not '==' or '=~') then it's a var assignment, highlight
+               (let ((str (buffer-substring-no-properties (line-beginning-position) (match-beginning 0)))
+                     (match-str (match-string 0)))
+                 (save-match-data
+                   (if (s-ends-with-p "=" match-str)
+                       (let ((next-char (char-to-string (char-after (match-end 0)))))
+                         (and (not (equal next-char "="))
+                              (not (equal next-char "~"))
+                              ;; make sure this isn't in an annotation
                               (not (string-match
                                     (rx "@" (+ alphanumeric)
                                         (* space)
                                         (zero-or-one (seq "(" (* (not (any ")")))))
                                         eol)
-                                    str)))))
-                   ;; otherwise if the string doesn't end in = it could still be an uninitialized var
-                   ;; so we check for def or type
-                   (save-match-data
+                                    str))))
+                     ;; otherwise if the string doesn't end in '=' it could still be an uninitialized var
+                     ;; so we check for def or type
                      (and
-                      ;; if the preceding non-whitespace char is = then it's not a var
+                      ;; if the preceding non-whitespace char is '=' then it's not a var
                       (not (string-match (rx "=" (* space) eol) str))
+                      ;; make sure we're not a list: [a, b, c]
+                      (not (string-match (rx "[" (* (not (any "]"))) eol) str))
                       ;; if not, look for declarations at line beginning
                       (string-match
                        (rx-to-string

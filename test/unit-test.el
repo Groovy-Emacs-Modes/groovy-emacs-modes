@@ -275,4 +275,16 @@ then run BODY."
   (with-highlighted-groovy "List<Map<String, Object>> x"
     (search-forward "x")
     (backward-char 1)
-    (should (memq 'font-lock-variable-name-face (faces-at-point)))))
+    (should (memq 'font-lock-variable-name-face (faces-at-point))))
+  (with-highlighted-groovy "String a, b, c, d"
+    (search-forward "b")
+    (backward-char 1)
+    (should (memq 'font-lock-variable-name-face (faces-at-point))))
+  (with-highlighted-groovy "def (a, b, c) = [1, 2, 3]"
+    (search-forward "b")
+    (backward-char 1)
+    (should (memq 'font-lock-variable-name-face (faces-at-point))))
+  (with-highlighted-groovy "def (a, b, c) = [1, x, 3]"
+    (search-forward "x")
+    (backward-char 1)
+    (should (not (memq 'font-lock-variable-name-face (faces-at-point))))))
