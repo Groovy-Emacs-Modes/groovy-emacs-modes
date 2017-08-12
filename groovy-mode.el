@@ -314,8 +314,6 @@ The function name is the second group in the regexp.")
     (rx "/$")))
 
 ;; TODO: handle def (a, b, c) = [1, 2, 3]
-;; DONE: handle public void fooBar(Test a)
-;; TODO: don't highlight annotation assignments?
 (defun groovy--variable-names-search (limit)
   "Search for variable names up to LIMIT."
   (let* ((pos (point))
