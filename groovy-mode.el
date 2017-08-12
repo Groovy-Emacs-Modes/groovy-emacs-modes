@@ -159,17 +159,6 @@ The function name is the second group in the regexp.")
 (defalias 'groovy-parent-mode
   (if (fboundp 'prog-mode) 'prog-mode 'fundamental-mode))
 
-(defvar groovy-declaration-regexp
-  (rx-to-string
-   `(seq
-     line-start (0+ space)
-     (+
-      (or "def" "public" "private" "protected" "final"
-          (regexp ,groovy-type-regexp))
-      (+ space))
-     (group (regexp ,groovy-symbol-regexp))))
-  "Match 'def foo' or 'private Type foo'. The name is the second group.")
-
 (defsubst groovy--in-string-p ()
   "Return t if (point) is in a string."
   (nth 3 (syntax-ppss)))
@@ -247,15 +236,8 @@ The function name is the second group in the regexp.")
      1 font-lock-type-face)
     ;; Highlight function names.
     (,groovy-function-regexp 2 font-lock-function-name-face)
-    ;; Highlight declarations of the form 'def foo'.
-    (,groovy-declaration-regexp
-     2 font-lock-variable-name-face)
-    ;; Highlight variables of the form 'foo = '
-    (,(rx
-       line-start (0+ space)
-       (group (+ (or (syntax word) (syntax symbol))))
-       (0+ space) "=")
-     1 font-lock-variable-name-face)
+    ;; Highlight declarations of the form 'def foo' and foo = 1
+    (groovy--variable-names-search 1 font-lock-variable-name-face t)
     ;; Highlight $foo and $foo.bar string interpolation, but not \$foo.
     (,(lambda (limit)
         (let ((pattern
@@ -330,6 +312,49 @@ The function name is the second group in the regexp.")
     (rx "$/"))
   (defconst groovy-dollar-slashy-close-regex
     (rx "/$")))
+
+;; TODO: handle def (a, b, c) = [1, 2, 3]
+;; TODO: handle public void fooBar(Test a)
+;; TODO: don't highlight annotation assignments?
+(defun groovy--variable-names-search (limit)
+  "Search for variable names up to LIMIT."
+  (let* ((pos (point))
+         (pattern (rx-to-string
+                   `(seq
+
+                     ;;(seq "(" (+ (not (any ")"))) ")")
+                     (seq (or bol space "(" ",")
+                          (regexp ,groovy-symbol-regexp))
+                     (* space)
+                     (or "=" ";" eol))))
+         (matched (re-search-forward pattern limit t)))
+    (when (and matched (> matched pos))
+      (if (and (not (groovy--in-string-p))
+               (not (groovy--comment-p matched))
+               ;; if ends in = (and not == or =~) then it's a var assignment, highlight
+               (if (s-ends-with-p "=" (match-string 0))
+                   (let ((next-char (char-to-string (char-after (match-end 0)))))
+                     (and (not (equal next-char "="))
+                          (not (equal next-char "~"))))
+                 ;; otherwise if the string doesn't end in = it could still be an uninitialized var
+                 ;; so we check for def or type
+                 (save-match-data
+                   (let ((str (buffer-substring-no-properties (line-beginning-position) (match-beginning 0))))
+                     (and
+                      ;; if the preceding non-whitespace char is = then it's not a var
+                      (not (string-match (rx "=" (* space) eol) str))
+                      ;; if not, look for declarations at line beginning
+                      (string-match
+                       (rx-to-string
+                        `(seq line-start (* space)
+                              (+
+                               (or "def" "public" "private" "protected" "final" "static"
+                                   (seq "@" (+ alphanumeric))
+                                   (regexp ,groovy-type-regexp)))))
+                       str))))))
+          t ;; we have a match
+        ;; keep searching
+        (groovy--variable-names-search limit)))))
 
 (defun groovy-stringify-triple-quote ()
   "Put `syntax-table' property on triple-quoted strings."
