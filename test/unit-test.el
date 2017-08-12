@@ -172,6 +172,7 @@ then run BODY."
    (should (eq (face-at-point) 'font-lock-keyword-face))))
 
 (defun faces-at-point ()
+  "Return face at point."
   (let* ((props (text-properties-at (point)))
          (faces (plist-get props 'face)))
     (if (listp faces) faces (list faces))))
@@ -229,3 +230,49 @@ then run BODY."
    "def bar /* foo */"
    (search-forward "foo")
    (should (not (memq 'font-lock-string-face (faces-at-point))))))
+
+(ert-deftest groovy-highlight-variable-assignment ()
+  "Highlight 'x = 1' as variable."
+  (with-highlighted-groovy "x = 1"
+    (search-forward "x")
+    (backward-char 1)
+    (should (memq 'font-lock-variable-name-face (faces-at-point))))
+  (with-highlighted-groovy "if ((x = \"foo\") && x =~ y) {"
+    (search-forward "x")
+    (backward-char 1)
+    (should (memq 'font-lock-variable-name-face (faces-at-point))))
+  (with-highlighted-groovy "Foo y; x = 1"
+    (search-forward "x")
+    (backward-char 1)
+    (should (memq 'font-lock-variable-name-face (faces-at-point))))
+  (with-highlighted-groovy "(x =~ /bar/)"
+    (search-forward "x")
+    (backward-char 1)
+    (should (not (memq 'font-lock-variable-name-face (faces-at-point)))))
+  (with-highlighted-groovy "x == bar"
+    (search-forward "x")
+    (backward-char 1)
+    (should (not (memq 'font-lock-variable-name-face (faces-at-point)))))
+  (with-highlighted-groovy "@Foo(x=false)"
+    (search-forward "x")
+    (backward-char 1)
+    (should (not (memq 'font-lock-variable-name-face (faces-at-point))))))
+
+(ert-deftest groovy-highlight-variable-declaration ()
+  "Highlight 'def x' as variable."
+  (with-highlighted-groovy "def x"
+    (search-forward "x")
+    (backward-char 1)
+    (should (memq 'font-lock-variable-name-face (faces-at-point))))
+  (with-highlighted-groovy "private String x = 1"
+    (search-forward "x")
+    (backward-char 1)
+    (should (memq 'font-lock-variable-name-face (faces-at-point))))
+  (with-highlighted-groovy "Foo x; def y = 1"
+    (search-forward "x")
+    (backward-char 1)
+    (should (memq 'font-lock-variable-name-face (faces-at-point))))
+  (with-highlighted-groovy "List<Map<String, Object>> x"
+    (search-forward "x")
+    (backward-char 1)
+    (should (memq 'font-lock-variable-name-face (faces-at-point)))))

@@ -136,7 +136,7 @@ The function name is the second group in the regexp.")
 
 (defvar groovy-class-regexp
   "^[ \t\n\r]*\\(final\\|abstract\\|public\\|[ \t\n\r]\\)*class[ \t\n\r]+\\([a-zA-Z0-9_$]+\\)[^;{]*{"
-  "Matches class names in groovy code, select match 2")
+  "Matches class names in groovy code, select match 2.")
 
 (defvar groovy-interface-regexp
   (rx-to-string
@@ -152,7 +152,7 @@ The function name is the second group in the regexp.")
         (list "Classes" groovy-class-regexp 2)
         (list "Interfaces" groovy-interface-regexp 1)
         (list "Closures" "def[ \t]+\\([a-zA-Z_][a-zA-Z0-9_]*\\)[ \t]*=[ \t]*{" 1))
-  "Imenu expression for Groovy")
+  "Imenu expression for Groovy.")
 
 
 ;; For compatibility with Emacs < 24
@@ -236,7 +236,7 @@ The function name is the second group in the regexp.")
      1 font-lock-type-face)
     ;; Highlight function names.
     (,groovy-function-regexp 2 font-lock-function-name-face)
-    ;; Highlight declarations of the form 'def foo' and foo = 1
+    ;; Highlight declarations and assignments of the form 'def foo' and 'foo = 1'
     (groovy--variable-names-search 1 font-lock-variable-name-face t)
     ;; Highlight $foo and $foo.bar string interpolation, but not \$foo.
     (,(lambda (limit)
@@ -330,14 +330,23 @@ The function name is the second group in the regexp.")
       (if (and (not (groovy--in-string-p))
                (not (groovy--comment-p matched))
                ;; if ends in = (and not == or =~) then it's a var assignment, highlight
-               (if (s-ends-with-p "=" (match-string 0))
-                   (let ((next-char (char-to-string (char-after (match-end 0)))))
-                     (and (not (equal next-char "="))
-                          (not (equal next-char "~"))))
-                 ;; otherwise if the string doesn't end in = it could still be an uninitialized var
-                 ;; so we check for def or type
-                 (save-match-data
-                   (let ((str (buffer-substring-no-properties (line-beginning-position) (match-beginning 0))))
+               (let ((str (buffer-substring-no-properties (line-beginning-position) (match-beginning 0))))
+                 (message "str: %s" str)
+                 (if (s-ends-with-p "=" (match-string 0))
+                     (let ((next-char (char-to-string (char-after (match-end 0)))))
+                       (and (not (equal next-char "="))
+                            (not (equal next-char "~"))
+                            ;; make sure this isn't in an annotation
+                            (save-match-data
+                              (not (string-match
+                                    (rx "@" (+ alphanumeric)
+                                        (* space)
+                                        (zero-or-one (seq "(" (* (not (any ")")))))
+                                        eol)
+                                    str)))))
+                   ;; otherwise if the string doesn't end in = it could still be an uninitialized var
+                   ;; so we check for def or type
+                   (save-match-data
                      (and
                       ;; if the preceding non-whitespace char is = then it's not a var
                       (not (string-match (rx "=" (* space) eol) str))
