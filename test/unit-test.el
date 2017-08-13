@@ -284,7 +284,26 @@ then run BODY."
     (search-forward "b")
     (backward-char 1)
     (should (memq 'font-lock-variable-name-face (faces-at-point))))
+  (with-highlighted-groovy "[:].each { String x, def y ->"
+    (search-forward "y")
+    (backward-char 1)
+    (should (memq 'font-lock-variable-name-face (faces-at-point))))
+  (with-highlighted-groovy "private void fooBar(Foo x) {"
+    (search-forward "x")
+    (backward-char 1)
+    (should (memq 'font-lock-variable-name-face (faces-at-point)))))
+
+(ert-deftest groovy-highlight-variables ()
+  "Make sure symbols aren't being highlighted that shouldn't be."
   (with-highlighted-groovy "def (a, b, c) = [1, x, 3]"
+    (search-forward "x")
+    (backward-char 1)
+    (should (not (memq 'font-lock-variable-name-face (faces-at-point)))))
+  (with-highlighted-groovy "def (a, b, c) = foo(1, x, 3)"
+    (search-forward "x")
+    (backward-char 1)
+    (should (not (memq 'font-lock-variable-name-face (faces-at-point)))))
+  (with-highlighted-groovy "x"
     (search-forward "x")
     (backward-char 1)
     (should (not (memq 'font-lock-variable-name-face (faces-at-point))))))

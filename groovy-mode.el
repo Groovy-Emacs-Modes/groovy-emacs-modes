@@ -312,82 +312,73 @@ The function name is the second group in the regexp.")
   (defconst groovy-dollar-slashy-open-regex
     (rx "$/"))
   (defconst groovy-dollar-slashy-close-regex
-    (rx "/$")))
+    (rx "/$"))
+  (defconst groovy-declaration-regex
+    (rx-to-string
+     `(seq
+       line-start
+       (* space)
+       (+
+        (or "def" "public" "private" "protected" "final" "static"
+            (seq "@" (+ alphanumeric))
+            (regexp ,groovy-type-regexp))
+        (not (any "."))))))
+  (defconst groovy-variable-regex
+    (rx-to-string
+     `(seq
+       (seq (group (or bol space "(" ","))
+            (regexp ,groovy-symbol-regexp))
+       (* space)
+       (group (or "=" ";" ")" "," "->" eol))))))
 
 (defun groovy--variable-names-search (limit)
   "Search for variable names up to LIMIT."
   (let* ((pos (point))
-         (pattern (rx-to-string
-                   `(seq
-                     (seq (group (or bol space "(" ","))
-                          (regexp ,groovy-symbol-regexp))
-                     (* space)
-                     (group (or "=" ";" ")" "," eol)))))
-         (matched (re-search-forward pattern limit t)))
+         (matched (re-search-forward groovy-variable-regex limit t)))
     (when (and matched (> matched pos))
-      (if (and (not (groovy--in-string-p))
+      (or (and (not (groovy--in-string-p))
                (not (groovy--comment-p matched))
                ;; if ends in '=' (and not '==' or '=~') then it's a var assignment, highlight
                (let* ((line-beg (- (match-beginning 0) (line-beginning-position)))
+                      (cur-line (groovy--current-line))
                       (str (buffer-substring-no-properties (line-beginning-position) (match-beginning 0)))
-                      (match-str (match-string 0))
+                      (match-str (s-trim (match-string 0)))
                       (open-char (match-string 1)))
                  (save-match-data
-                   (if (s-ends-with-p "=" match-str)
-                       (let ((next-char (char-to-string (char-after (match-end 0)))))
-                         (and (not (equal next-char "="))
-                              (not (equal next-char "~"))
-                              ;; make sure this isn't in an annotation
-                              (not (string-match
-                                    (rx "@" (+ alphanumeric)
-                                        (* space)
-                                        (zero-or-one (seq "(" (* (not (any ")")))))
-                                        eol)
-                                    str))))
-                     ;; otherwise if the string doesn't end in '=' it could still be an uninitialized var
-                     ;; so we check for def or type
-                     (and
-                      ;; if the preceding non-whitespace char is '=' then it's not a var
-                      (not (string-match (rx "=" (* space) eol) str))
-                      ;; make sure we're not in a list: [a, b, c]
-                      (not (string-match (rx "[" (* (not (any "]"))) eol) str))
-                      ;; if in parens then there needs to be an '=' after closing paren:
-                      ;; 'def (a, b, c) = list' otherwise it's a method call
-                      (let ((start
-                             (if (equal open-char "(")
-                                 line-beg
-                               (when (string-match (rx "(" (+ (not (any ")"))) eol) str)
-                                 (match-end 0)))))
-                        (or (not start)
-                            (string-match (rx bol (+ (not (any ")"))) ")" (* space) "=")
-                                          (groovy--current-line)
-                                          start)))
-                      ;; if not, look for declarations at line beginning
-                      (when (string-match
-                             (rx-to-string
-                              `(seq
-                                line-start
-                                (* space)
-                                (+
-                                 (or "def" "public" "private" "protected" "final" "static"
-                                     (seq "@" (+ alphanumeric))
-                                     (regexp ,groovy-type-regexp))
-                                 ;;(or (+ space) eol)
-                                 )
-                                ;; (*
-                                ;;  (or "public" "private" "protected" "def"
-                                ;;      "final" "static" (seq "@" (+ alphanumeric)))
-                                ;;  (+ space))
-                                ;; (regexp ,groovy-type-regexp)
-                                ))
-                             str)
-                        (message "here: %s" (match-string 0 str))
-                        t
-                        ))))))
-          ;; we have a match
-          t
-        ;; keep searching
-        (groovy--variable-names-search limit)))))
+                   (unless (string-match (rx bol (* space) (eval match-str) (* space) eol) cur-line)
+                     (if (s-ends-with-p "=" match-str)
+                         (let ((next-char (char-to-string (char-after (match-end 0)))))
+                           (and (not (equal next-char "="))
+                                (not (equal next-char "~"))
+                                ;; make sure this isn't in an annotation
+                                (not (string-match
+                                      (rx "@" (+ alphanumeric)
+                                          (* space)
+                                          (zero-or-one (seq "(" (* (not (any ")")))))
+                                          eol)
+                                      str))))
+                       ;; otherwise if the string doesn't end in '=' it could still be an uninitialized var
+                       ;; so we check for def or type
+                       (and
+                        ;; if the preceding non-whitespace char is '=' then it's not a var
+                        (not (string-match (rx "=" (* space) eol) str))
+                        ;; make sure we're not in a list: [a, b, c]
+                        (not (string-match (rx "[" (* (not (any "]"))) eol) str))
+                        ;; if not, look for declarations at line beginning
+                        (or (and (string-match groovy-declaration-regex str)
+                                 ;; if declaration make sure there's no = between the type and the var
+                                 (not (string-match "=" (substring cur-line (match-end 0) line-beg))))
+                            ;; or it's a list like '(a, b, c) = list'
+                            (let ((start
+                                   (if (equal open-char "(")
+                                       line-beg
+                                     (when (string-match (rx "(" (+ (not (any ")"))) eol) str)
+                                       (match-end 0)))))
+                              (or (not start)
+                                  (string-match (rx bol (+ (not (any ")"))) ")" (* space) (or "=" "{"))
+                                                (substring cur-line start nil)))))))))))
+          ;; keep searching
+          (groovy--variable-names-search limit)))))
 
 (defun groovy-stringify-triple-quote ()
   "Put `syntax-table' property on triple-quoted strings."
