@@ -304,6 +304,4 @@ then run BODY."
     (backward-char 1)
     (should (not (memq 'font-lock-variable-name-face (faces-at-point)))))
   (with-highlighted-groovy "x"
-    (search-forward "x")
-    (backward-char 1)
     (should (not (memq 'font-lock-variable-name-face (faces-at-point))))))
