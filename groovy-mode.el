@@ -352,33 +352,38 @@ The function name is the second group in the regexp.")
                       ;; make sure we're not in a list: [a, b, c]
                       (not (string-match (rx "[" (* (not (any "]"))) eol) str))
                       ;; if in parens then there needs to be an '=' after closing paren:
-                      ;; 'def (a, b, c) = list'
+                      ;; 'def (a, b, c) = list' otherwise it's a method call
                       (let ((start
                              (if (equal open-char "(")
                                  line-beg
                                (when (string-match (rx "(" (+ (not (any ")"))) eol) str)
                                  (match-end 0)))))
                         (or (not start)
-                            (string-match (rx bol (* (not (any ")"))) ")" (* space) "=")
+                            (string-match (rx bol (+ (not (any ")"))) ")" (* space) "=")
                                           (groovy--current-line)
                                           start)))
                       ;; if not, look for declarations at line beginning
-                      (string-match
-                       (rx-to-string
-                        `(seq
-                          line-start
-                          (* space)
-                          ;; (+
-                          ;;  (or "def" "public" "private" "protected" "final" "static"
-                          ;;      (seq "@" (+ alphanumeric))
-                          ;;      (regexp ,groovy-type-regexp))
-                          ;;  (or (+ space) eol))
-                          (*
-                           (or "public" "private" "protected" "def"
-                               "final" "static" (seq "@" (+ alphanumeric)))
-                           (+ space))
-                          (regexp ,groovy-type-regexp)))
-                       str))))))
+                      (when (string-match
+                             (rx-to-string
+                              `(seq
+                                line-start
+                                (* space)
+                                (+
+                                 (or "def" "public" "private" "protected" "final" "static"
+                                     (seq "@" (+ alphanumeric))
+                                     (regexp ,groovy-type-regexp))
+                                 ;;(or (+ space) eol)
+                                 )
+                                ;; (*
+                                ;;  (or "public" "private" "protected" "def"
+                                ;;      "final" "static" (seq "@" (+ alphanumeric)))
+                                ;;  (+ space))
+                                ;; (regexp ,groovy-type-regexp)
+                                ))
+                             str)
+                        (message "here: %s" (match-string 0 str))
+                        t
+                        ))))))
           ;; we have a match
           t
         ;; keep searching
