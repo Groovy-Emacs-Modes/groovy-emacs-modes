@@ -237,7 +237,8 @@ The function name is the second group in the regexp.")
     ;; Highlight function names.
     (,groovy-function-regexp 2 font-lock-function-name-face)
     ;; Highlight declarations and assignments of the form 'def foo' and 'foo = 1'
-    (groovy--variable-names-search 1 font-lock-variable-name-face t)
+    ;;(groovy--variable-names-search 1 font-lock-variable-name-face t)
+    (groovy--variable-names-search 2 font-lock-variable-name-face t)
     ;; Highlight $foo and $foo.bar string interpolation, but not \$foo.
     (,(lambda (limit)
         (let ((pattern
@@ -318,17 +319,19 @@ The function name is the second group in the regexp.")
   (let* ((pos (point))
          (pattern (rx-to-string
                    `(seq
-                     (seq (or bol space "(" ",")
+                     (seq (group (or bol space "(" ","))
                           (regexp ,groovy-symbol-regexp))
                      (* space)
-                     (or "=" ";" ")" "," eol))))
+                     (group (or "=" ";" ")" "," eol)))))
          (matched (re-search-forward pattern limit t)))
     (when (and matched (> matched pos))
       (if (and (not (groovy--in-string-p))
                (not (groovy--comment-p matched))
                ;; if ends in '=' (and not '==' or '=~') then it's a var assignment, highlight
-               (let ((str (buffer-substring-no-properties (line-beginning-position) (match-beginning 0)))
-                     (match-str (match-string 0)))
+               (let* ((line-beg (- (match-beginning 0) (line-beginning-position)))
+                      (str (buffer-substring-no-properties (line-beginning-position) (match-beginning 0)))
+                      (match-str (match-string 0))
+                      (open-char (match-string 1)))
                  (save-match-data
                    (if (s-ends-with-p "=" match-str)
                        (let ((next-char (char-to-string (char-after (match-end 0)))))
@@ -346,16 +349,35 @@ The function name is the second group in the regexp.")
                      (and
                       ;; if the preceding non-whitespace char is '=' then it's not a var
                       (not (string-match (rx "=" (* space) eol) str))
-                      ;; make sure we're not a list: [a, b, c]
+                      ;; make sure we're not in a list: [a, b, c]
                       (not (string-match (rx "[" (* (not (any "]"))) eol) str))
+                      ;; if in parens then there needs to be an '=' after closing paren:
+                      ;; 'def (a, b, c) = list'
+                      (let ((start
+                             (if (equal open-char "(")
+                                 line-beg
+                               (when (string-match (rx "(" (+ (not (any ")"))) eol) str)
+                                 (match-end 0)))))
+                        (or (not start)
+                            (string-match (rx bol (* (not (any ")"))) ")" (* space) "=")
+                                          (groovy--current-line)
+                                          start)))
                       ;; if not, look for declarations at line beginning
                       (string-match
                        (rx-to-string
-                        `(seq line-start (* space)
-                              (+
-                               (or "def" "public" "private" "protected" "final" "static"
-                                   (seq "@" (+ alphanumeric))
-                                   (regexp ,groovy-type-regexp)))))
+                        `(seq
+                          line-start
+                          (* space)
+                          ;; (+
+                          ;;  (or "def" "public" "private" "protected" "final" "static"
+                          ;;      (seq "@" (+ alphanumeric))
+                          ;;      (regexp ,groovy-type-regexp))
+                          ;;  (or (+ space) eol))
+                          (*
+                           (or "public" "private" "protected" "def"
+                               "final" "static" (seq "@" (+ alphanumeric)))
+                           (+ space))
+                          (regexp ,groovy-type-regexp)))
                        str))))))
           ;; we have a match
           t
