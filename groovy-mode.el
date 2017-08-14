@@ -159,16 +159,16 @@ The function name is the second group in the regexp.")
 (defalias 'groovy-parent-mode
   (if (fboundp 'prog-mode) 'prog-mode 'fundamental-mode))
 
-(defvar groovy-declaration-regexp
-  (rx-to-string
-   `(seq
-     line-start (0+ space)
-     (+
-      (or "def" "public" "private" "protected" "final"
-          (regexp ,groovy-type-regexp))
-      (+ space))
-     (group (regexp ,groovy-symbol-regexp))))
-  "Match 'def foo' or 'private Type foo'. The name is the second group.")
+;; (defvar groovy-declaration-regexp
+;;   (rx-to-string
+;;    `(seq
+;;      line-start (0+ space)
+;;      (+
+;;       (or "def" "public" "private" "protected" "final"
+;;           (regexp ,groovy-type-regexp))
+;;       (+ space))
+;;      (group (regexp ,groovy-symbol-regexp))))
+;;   "Match 'def foo' or 'private Type foo'. The name is the second group.")
 
 (defsubst groovy--in-string-p ()
   "Return t if (point) is in a string."
@@ -245,11 +245,12 @@ The function name is the second group in the regexp.")
      . groovy-annotation-face)
     (,groovy-type-regexp
      1 font-lock-type-face)
+    ;;(groovy-type-search 1 font-lock-type-face)
     ;; Highlight function names.
     (,groovy-function-regexp 2 font-lock-function-name-face)
     ;; Highlight declarations of the form 'def foo'.
-    (,groovy-declaration-regexp
-     2 font-lock-variable-name-face)
+    ;;(,groovy-declaration-regexp 2 font-lock-variable-name-face)
+    (groovy-declaration-search 1 font-lock-variable-name-face)
     ;; Highlight variables of the form 'foo = '
     (,(rx
        line-start (0+ space)
@@ -329,7 +330,70 @@ The function name is the second group in the regexp.")
   (defconst groovy-dollar-slashy-open-regex
     (rx "$/"))
   (defconst groovy-dollar-slashy-close-regex
-    (rx "/$")))
+    (rx "/$"))
+  (defconst groovy-declaration-regexp
+    (rx
+     (+
+      (or bol
+          (+ space)
+          (seq (* space)
+               (+ (or "def" "public" "private" "protected" "final" "static")
+                  (+ space)))))
+     (seq
+      symbol-start
+      (group
+       (or
+        ;; Treat Foo, FooBar and FFoo as type names, but not FOO.
+        (seq (+ upper) lower (* (syntax word)) (or " " "<"))
+        (seq (or
+              "def"
+              "byte"
+              "short"
+              "int"
+              "long"
+              "float"
+              "double"
+              "boolean"
+              "char")
+             symbol-end
+             (? "[]"))))))))
+
+;; (defun groovy-type-search (limit)
+;;   "Search for types until LIMIT."
+;;   (if (re-search-forward groovy-type-regexp limit t)
+;;       (groovy-type-search limit)))
+
+(defun groovy-declaration-search (limit)
+  "Find variable declarations up to LIMIT."
+  (let* ((pos (point))
+         (case-fold-search nil)
+         (match (re-search-forward groovy-declaration-regexp limit t)))
+    (when (and match (> match pos))
+      (or (and
+           (not (groovy--in-string-p))
+           (not (groovy--comment-p (point)))
+           (let ((match-s (match-string 0))
+                 (cur-line (groovy--current-line-no-comment)))
+             (when (s-ends-with-p "<" match-s)
+               (let ((count 1)
+                     (found t)
+                     (forw 0)
+                     (line (substring cur-line (- (match-end 0) (line-beginning-position)) nil)))
+                 (save-match-data
+                   (while (and (> count 0) found line)
+                     (setq found (string-match (rx (or ">" "<")) line))
+                     (when found
+                       (setq count (if (equal (match-string 0 line) ">")
+                                       (1- count)
+                                     (1+ count))
+                             line (substring line (1+ found) nil)
+                             forw (+ forw (1+ found))))))
+                 (when (eq count 0)
+                   (goto-char (+ (match-end 0) forw)))))
+             (re-search-forward
+              (rx-to-string `(seq point (* space) (regexp ,groovy-symbol-regexp)))
+              (line-end-position) t)))
+          (groovy-declaration-search limit)))))
 
 (defun groovy-stringify-triple-quote ()
   "Put `syntax-table' property on triple-quoted strings."
@@ -485,6 +549,15 @@ dollar-slashy-quoted strings."
   "The current line enclosing point."
   (buffer-substring-no-properties
    (line-beginning-position) (line-end-position)))
+
+(defun groovy--current-line-no-comment ()
+  "The current line enclosing point."
+  (save-excursion
+    (goto-char (line-end-position))
+    (if (groovy--comment-p (point))
+        (buffer-substring-no-properties
+         (line-beginning-position) (nth 8 (syntax-ppss)))
+      (groovy--current-line))))
 
 (defun groovy--enclosing-blocks ()
   "Return a list of the block keywords that enclose point.
