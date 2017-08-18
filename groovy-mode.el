@@ -159,17 +159,6 @@ The function name is the second group in the regexp.")
 (defalias 'groovy-parent-mode
   (if (fboundp 'prog-mode) 'prog-mode 'fundamental-mode))
 
-;; (defvar groovy-declaration-regexp
-;;   (rx-to-string
-;;    `(seq
-;;      line-start (0+ space)
-;;      (+
-;;       (or "def" "public" "private" "protected" "final"
-;;           (regexp ,groovy-type-regexp))
-;;       (+ space))
-;;      (group (regexp ,groovy-symbol-regexp))))
-;;   "Match 'def foo' or 'private Type foo'. The name is the second group.")
-
 (defsubst groovy--in-string-p ()
   "Return t if (point) is in a string."
   (nth 3 (syntax-ppss)))
@@ -243,20 +232,19 @@ The function name is the second group in the regexp.")
     ;; Annotations
     (,(rx "@" symbol-start (+ (or (syntax word) (syntax symbol))) symbol-end)
      . groovy-annotation-face)
-    (,groovy-type-regexp
-     1 font-lock-type-face)
-    ;;(groovy-type-search 1 font-lock-type-face)
+    (,groovy-type-regexp 1 font-lock-type-face)
     ;; Highlight function names.
     (,groovy-function-regexp 2 font-lock-function-name-face)
+    ;;(groovy-function-search 1 font-lock-function-name-face)
     ;; Highlight declarations of the form 'def foo'.
     ;;(,groovy-declaration-regexp 2 font-lock-variable-name-face)
     (groovy-declaration-search 1 font-lock-variable-name-face)
     ;; Highlight variables of the form 'foo = '
-    (,(rx
-       line-start (0+ space)
-       (group (+ (or (syntax word) (syntax symbol))))
-       (0+ space) "=")
-     1 font-lock-variable-name-face)
+    ;; (,(rx
+    ;;    line-start (0+ space)
+    ;;    (group (+ (or (syntax word) (syntax symbol))))
+    ;;    (0+ space) "=")
+    ;;  1 font-lock-variable-name-face)
     ;; Highlight $foo and $foo.bar string interpolation, but not \$foo.
     (,(lambda (limit)
         (let ((pattern
@@ -333,17 +321,19 @@ The function name is the second group in the regexp.")
     (rx "/$"))
   (defconst groovy-declaration-regexp
     (rx
-     (+
-      (or bol
-          (+ space)
-          (seq (* space)
-               (+ (or "def" "public" "private" "protected" "final" "static")
-                  (+ space)))))
+     (or bol "(" ";")
+     (* space)
+     (*
+      (seq
+       (+ (or "def" "public" "private" "protected" "final" "static")
+          (+ space))))
      (seq
+      (* space)
       symbol-start
       (group
        (or
         ;; Treat Foo, FooBar and FFoo as type names, but not FOO.
+        ;; also Foo<Bar>
         (seq (+ upper) lower (* (syntax word)) (or " " "<"))
         (seq (or
               "def"
@@ -363,6 +353,24 @@ The function name is the second group in the regexp.")
 ;;   (if (re-search-forward groovy-type-regexp limit t)
 ;;       (groovy-type-search limit)))
 
+;; (defun groovy-function-search (limit)
+;;   "Find function declarations up to LIMIT."
+;;   (let* ((pos (point))
+;;          (case-fold-search nil)
+;;          (match (re-search-forward groovy-declaration-regexp limit t))))
+
+(defun groovy--travel-parameritized-types ()
+  "Pass over <Foo<Bar>> "
+  (let ((count 1)
+        (found t))
+    (while (and (> count 0) found)
+      ;;(setq found (string-match (rx (or ">" "<")) line))
+      (setq found (re-search-forward (rx (or ">" "<")) (line-end-position) t))
+      (when found
+        (setq count (if (equal (match-string 0) ">")
+                        (1- count)
+                      (1+ count)))))))
+
 (defun groovy-declaration-search (limit)
   "Find variable declarations up to LIMIT."
   (let* ((pos (point))
@@ -372,27 +380,19 @@ The function name is the second group in the regexp.")
       (or (and
            (not (groovy--in-string-p))
            (not (groovy--comment-p (point)))
-           (let ((match-s (match-string 0))
-                 (cur-line (groovy--current-line-no-comment)))
+           (let ((match-s (match-string 0)))
              (when (s-ends-with-p "<" match-s)
-               (let ((count 1)
-                     (found t)
-                     (forw 0)
-                     (line (substring cur-line (- (match-end 0) (line-beginning-position)) nil)))
-                 (save-match-data
-                   (while (and (> count 0) found line)
-                     (setq found (string-match (rx (or ">" "<")) line))
-                     (when found
-                       (setq count (if (equal (match-string 0 line) ">")
-                                       (1- count)
-                                     (1+ count))
-                             line (substring line (1+ found) nil)
-                             forw (+ forw (1+ found))))))
-                 (when (eq count 0)
-                   (goto-char (+ (match-end 0) forw)))))
-             (re-search-forward
-              (rx-to-string `(seq point (* space) (regexp ,groovy-symbol-regexp)))
-              (line-end-position) t)))
+               (groovy--travel-parameritized-types))
+             ;; TODO: if match `def (a, b, c)' = or `def a, b, c' mark with field for later
+             (message "h: %s" match-s)
+             (let ((var-match
+                    (re-search-forward
+                     (rx-to-string `(seq point (* space)
+                                         (regexp ,groovy-symbol-regexp)))
+                     (line-end-position) t))
+                   (match-s (s-trim (match-string 0))))
+               (and var-match (not (save-excursion
+                     (re-search-forward (rx point (* space) "(") nil t)))))))
           (groovy-declaration-search limit)))))
 
 (defun groovy-stringify-triple-quote ()
