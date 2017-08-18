@@ -191,8 +191,14 @@ then run BODY."
     (search-forward "$")
     ;; This should be highlighted as a string, nothing else.
     (should (equal '(font-lock-string-face) (faces-at-point))))
+  (with-highlighted-groovy "x = '${foo}'"
+    (search-forward "f")
+    (should (equal '(font-lock-string-face) (faces-at-point))))
   (with-highlighted-groovy "x = '''$foo'''"
     (search-forward "$")
+    (should (equal '(font-lock-string-face) (faces-at-point))))
+  (with-highlighted-groovy "x = '''${foo}'''"
+    (search-forward "f")
     (should (equal '(font-lock-string-face) (faces-at-point)))))
 
 (ert-deftest groovy-highlight-comments ()
