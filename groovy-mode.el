@@ -292,21 +292,26 @@ The function name is the second group in the regexp.")
           (while (and
                   (not res)
                   (search-forward "${" limit t))
-            (when (and (groovy--in-string-p)
-                       (not (eq (char-before (- (point) 2))
-                                ?\\)))
-              (setq start (match-beginning 0))
-              (let ((restart-pos (match-end 0)))
-                (let (finish)
-                  ;; Search forward for the } that matches the opening {.
-                  (while (and (not res) (search-forward "}" limit t))
-                    (let ((end-pos (point)))
-                      (save-excursion
-                        (when (and (ignore-errors (backward-list 1))
-                                   (= start (1- (point))))
-                          (setq res end-pos)))))
-                  (unless res
-                    (goto-char restart-pos))))))
+            (let* ((string-delimiter-pos (nth 8 (syntax-ppss)))
+                   (string-delimiter (char-after string-delimiter-pos))
+                   (escaped-p (eq (char-before (- (point) 2))
+                                  ?\\)))
+              (when (and (groovy--in-string-p)
+                         ;; Interpolation does not apply in single-quoted strings.
+                         (not (eq string-delimiter ?'))
+                         (not escaped-p))
+                (setq start (match-beginning 0))
+                (let ((restart-pos (match-end 0)))
+                  (let (finish)
+                    ;; Search forward for the } that matches the opening {.
+                    (while (and (not res) (search-forward "}" limit t))
+                      (let ((end-pos (point)))
+                        (save-excursion
+                          (when (and (ignore-errors (backward-list 1))
+                                     (= start (1- (point))))
+                            (setq res end-pos)))))
+                    (unless res
+                      (goto-char restart-pos)))))))
           ;; Set match data and return point so we highlight this
           ;; instance.
           (when res
