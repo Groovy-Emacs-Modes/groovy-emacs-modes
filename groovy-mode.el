@@ -408,11 +408,24 @@ The function name is the second group in the regexp.")
                     (re-search-forward
                      (rx-to-string `(seq point (* space)
                                          (regexp ,groovy-symbol-regexp)))
-                     (line-end-position) t))
-                   (match-s (s-trim (match-string 0))))
+                     (line-end-position) t)))
+               ;; matches initial regexp, now look at special cases
                (if var-match
-                   (not (save-excursion
-                     (re-search-forward (rx point (* space) "(") nil t)))
+                   ;; if the var ends in a '(' it's a method name
+                   (unless (save-excursion
+                             (re-search-forward (rx point (* space) "(") nil t))
+                     ;; if declaration followed by ',' then it's of form `String a, b,c'
+                     (let ((md (match-data)))
+                       (with-silent-modifications
+                         (while (re-search-forward (rx-to-string
+                                                    `(seq point (* space) "," (* space)
+                                                          (regexp ,groovy-symbol-regexp)))
+                                                   limit t)
+                           (put-text-property (match-beginning 1) (match-end 1)
+                                              'groovy-special-variable (match-data))))
+                       (set-match-data md)
+                       t))
+                 ;; didn't match regexp, check if it's of form `def (a, b, c) = [1, 2, 3]'
                    (when (re-search-forward
                           (rx-to-string
                            `(seq point (* space) "(" (* space)
@@ -442,6 +455,7 @@ The function name is the second group in the regexp.")
                            (save-excursion
                              (goto-char beg)
                              (while (re-search-forward groovy-symbol-regexp end t)
+                               ;; mark list for later search
                                (put-text-property (match-beginning 1) (match-end 1)
                                                   'groovy-special-variable (match-data)))))
                          nil)))))))
