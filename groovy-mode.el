@@ -110,30 +110,6 @@
    symbol-end)
   "A variable name or a type name.")
 
-(defvar groovy-function-regexp
-  (rx-to-string
-   `(seq
-     line-start (0+ space)
-     ;; A function may start with 'public static final'
-     (1+
-      (or
-       (seq
-        (or "public" "private" "protected"
-            "abstract" "final" "static"
-            "synchronized" "native" "def")
-        (+ space))
-       ;; or it may start with a type name.
-       (seq (regexp ,groovy-type-regexp) (+ space))))
-
-     ;; The actual function name.
-     (group (regexp ,groovy-symbol-regexp))
-
-     ;; Require an open paren to avoid confusing with "def foo ="
-     (0+ space)
-     "("))
-  "Matches functions and methods in groovy code.
-The function name is the second group in the regexp.")
-
 (defvar groovy-class-regexp
   "^[ \t\n\r]*\\(final\\|abstract\\|public\\|[ \t\n\r]\\)*class[ \t\n\r]+\\([a-zA-Z0-9_$]+\\)[^;{]*{"
   "Matches class names in groovy code, select match 2")
@@ -148,7 +124,7 @@ The function name is the second group in the regexp.")
   "Matches interface names in groovy code.")
 
 (defvar groovy-imenu-regexp
-  (list (list "Functions" groovy-function-regexp 2)
+  (list ;;(list "Functions" groovy-function-regexp 2)
         (list "Classes" groovy-class-regexp 2)
         (list "Interfaces" groovy-interface-regexp 1)
         (list "Closures" "def[ \t]+\\([a-zA-Z_][a-zA-Z0-9_]*\\)[ \t]*=[ \t]*{" 1))
@@ -233,11 +209,7 @@ The function name is the second group in the regexp.")
     (,(rx "@" symbol-start (+ (or (syntax word) (syntax symbol))) symbol-end)
      . groovy-annotation-face)
     (,groovy-type-regexp 1 font-lock-type-face)
-    ;; Highlight function names.
-    (,groovy-function-regexp 2 font-lock-function-name-face)
-    ;;(groovy-function-search 1 font-lock-function-name-face)
-    ;; Highlight declarations of the form 'def foo'.
-    ;;(,groovy-declaration-regexp 2 font-lock-variable-name-face)
+    ;; Highlight declarations of the form 'def foo' and 'public void fooBar()'.
     (groovy-declaration-search 1 font-lock-variable-name-face)
     ;; Highlight variables of the form 'foo = '
     ;; (,(rx
@@ -307,7 +279,8 @@ The function name is the second group in the regexp.")
             (set-match-data (list start res))
             res)))
      (0 font-lock-variable-name-face t))
-    (groovy-special-variable-search 1 font-lock-variable-name-face)))
+    (groovy-special-variable-search 1 font-lock-variable-name-face)
+    (groovy-function-name-search 1 font-lock-function-name-face)))
 
 (eval-when-compile
   ;; http://groovy-lang.org/syntax.html#_shebang_line
@@ -330,55 +303,54 @@ The function name is the second group in the regexp.")
      (* space)
      (group (*
              (seq
-              (+ (or "def" "public" "private" "protected" "final" "static")
+              (+ (or "def" "public" "private" "protected" "final" "static"
+                     "abstract" "synchronized" "native")
                  (+ space)))))))
   (defconst groovy-declaration-regexp
     (rx-to-string
      `(seq
        (or bol "(" ";" "," "{")
-       ;;(* space)
        (regexp ,groovy-declaration-keyword-regex)
        (seq
-             (* space)
-             symbol-start
-             (group
-              (or
-               ;; Treat Foo, FooBar and FFoo as type names, but not FOO.
-               ;; also Foo<Bar>
-               (seq (+ upper) lower (* (syntax word)) (or " " "<"))
-               (seq (or
-                     "def"
-                     "byte"
-                     "short"
-                     "int"
-                     "long"
-                     "float"
-                     "double"
-                     "boolean"
-                     "char")
-                    symbol-end
-                    (? "[]")))))))))
+        (* space)
+        symbol-start
+        (group
+         (or
+          ;; Treat Foo, FooBar and FFoo as type names, but not FOO.
+          ;; also Foo<Bar>
+          (seq (+ upper) lower (* (syntax word)) (or " " "<"))
+          (seq (or
+                "def"
+                "byte"
+                "short"
+                "int"
+                "long"
+                "float"
+                "double"
+                "boolean"
+                "char"
+                "void")
+               symbol-end
+               (? "[]")))))))))
 
-;; (defun groovy-type-search (limit)
-;;   "Search for types until LIMIT."
-;;   (if (re-search-forward groovy-type-regexp limit t)
-;;       (groovy-type-search limit)))
-
-;; (defun groovy-function-search (limit)
-;;   "Find function declarations up to LIMIT."
-;;   (let* ((pos (point))
-;;          (case-fold-search nil)
-;;          (match (re-search-forward groovy-declaration-regexp limit t))))
 
 (defun groovy-special-variable-search (limit)
   "Search for text marked with `groovy-special-variable' to LIMIT."
+  (groovy-special-prop-search limit 'groovy-special-variable))
+
+(defun groovy-function-name-search (limit)
+  "Search for text marked with `groovy-special-variable' to LIMIT."
+  (groovy-special-prop-search limit 'groovy-function-name))
+
+(defun groovy-special-prop-search (limit prop-name)
+  "Search for PROP-NAME text-property to LIMIT."
   (let* ((pos (point))
-         (chg (next-single-property-change pos 'groovy-special-variable nil limit)))
+         (chg (next-single-property-change pos prop-name nil limit)))
     (when (and chg (> chg pos))
       (goto-char chg)
-      (let ((v (get-text-property chg 'groovy-special-variable)))
+      (let ((v (get-text-property chg prop-name)))
         (set-match-data v)
-         (or v (groovy-special-variable-search limit))))))
+        (or v (groovy-special-prop-search limit prop-name))))))
 
 (defun groovy--travel-parameritized-types ()
   "Pass over <Foo<Bar>> when searching declarations."
@@ -393,10 +365,13 @@ The function name is the second group in the regexp.")
 
 (defun groovy-declaration-search (limit)
   "Find variable declarations up to LIMIT."
+  (remove-text-properties (point)
+                          (or limit (point-max))
+                          '(groovy-special-variable nil
+                            groovy-function-name nil))
   (let* ((pos (point))
          (case-fold-search nil)
          (match (re-search-forward groovy-declaration-regexp limit t)))
-    (remove-text-properties (point) (or limit (point-max)) '(groovy-special-variable))
     (when (and match (> match pos))
       (or (and
            (not (groovy--in-string-p))
@@ -412,13 +387,20 @@ The function name is the second group in the regexp.")
                ;; matches initial regexp, now look at special cases
                (if var-match
                    ;; if the var ends in a '(' it's a method name
-                   (if (re-search-forward (rx point (* space) "(") nil t)
-                       (backward-char 1)
-                     ;; if declaration followed by ',' then it's of form `String a, b,c'
-                     (unless (or (s-starts-with-p "(" match-s)
-                                 (s-starts-with-p "{" match-s)
-                                 (s-starts-with-p "," match-s))
-                       (let ((md (match-data)))
+                   (let ((md (match-data)))
+                     (if (re-search-forward (rx point (* space) "(") nil t)
+                         (progn
+                           (backward-char 1)
+                           (set-match-data md)
+                           (with-silent-modifications
+                             (put-text-property (match-beginning 1) (match-end 1)
+                                                'groovy-function-name (match-data)))
+                           nil)
+                       ;; else if declaration followed by ',' then it's of form `String a, b,c'
+                       (unless (or (s-starts-with-p "(" match-s)
+                                   (s-starts-with-p "{" match-s)
+                                   (s-starts-with-p "," match-s))
+
                          (with-silent-modifications
                            (while (re-search-forward (rx-to-string
                                                       `(seq point (* space) "," (* space)
@@ -426,42 +408,42 @@ The function name is the second group in the regexp.")
                                                      limit t)
                              (put-text-property (match-beginning 1) (match-end 1)
                                                 'groovy-special-variable (match-data))))
-                         (set-match-data md)))
-                     t)
+                         (set-match-data md))
+                       t))
                  ;; didn't match regexp, check if it's of form `def (a, b, c) = [1, 2, 3]'
-                   (when (re-search-forward
-                          (rx-to-string
-                           `(seq point (* space) "(" (* space)
-                                 (group (+ (seq
-                                            (regexp ,groovy-symbol-regexp)
-                                            (* space)
-                                            (opt ",")
-                                            (* space))))
-                                 (* space) ")" (* space) "="))
-                          limit t)
-                     (let ((s (match-string 1))
-                           (beg (match-beginning 0))
-                           (end (match-end 0)))
-                       (when (save-excursion
-                               (string-match
-                                (rx-to-string
-                                 `(seq
-                                   bol
-                                   (+ (seq
-                                       (* space)
-                                       (regexp ,groovy-symbol-regexp)
-                                       (* space)
-                                       (or "," eol)))
-                                   eol))
-                                s))
-                         (with-silent-modifications
-                           (save-excursion
-                             (goto-char beg)
-                             (while (re-search-forward groovy-symbol-regexp end t)
-                               ;; mark list for later search
-                               (put-text-property (match-beginning 1) (match-end 1)
-                                                  'groovy-special-variable (match-data)))))
-                         nil)))))))
+                 (when (re-search-forward
+                        (rx-to-string
+                         `(seq point (* space) "(" (* space)
+                               (group (+ (seq
+                                          (regexp ,groovy-symbol-regexp)
+                                          (* space)
+                                          (opt ",")
+                                          (* space))))
+                               (* space) ")" (* space) "="))
+                        limit t)
+                   (let ((s (match-string 1))
+                         (beg (match-beginning 0))
+                         (end (match-end 0)))
+                     (when (save-excursion
+                             (string-match
+                              (rx-to-string
+                               `(seq
+                                 bol
+                                 (+ (seq
+                                     (* space)
+                                     (regexp ,groovy-symbol-regexp)
+                                     (* space)
+                                     (or "," eol)))
+                                 eol))
+                              s))
+                       (with-silent-modifications
+                         (save-excursion
+                           (goto-char beg)
+                           (while (re-search-forward groovy-symbol-regexp end t)
+                             ;; mark list for later search
+                             (put-text-property (match-beginning 1) (match-end 1)
+                                                'groovy-special-variable (match-data)))))
+                       nil)))))))
           (groovy-declaration-search limit)))))
 
 (defun groovy-stringify-triple-quote ()
