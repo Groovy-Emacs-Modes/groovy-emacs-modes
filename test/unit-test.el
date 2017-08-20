@@ -236,32 +236,33 @@ then run BODY."
    (search-forward "foo")
    (should (not (memq 'font-lock-string-face (faces-at-point))))))
 
-;; (ert-deftest groovy-highlight-variable-assignment ()
-;;   "Highlight 'x = 1' as variable."
-;;   (with-highlighted-groovy "x = 1"
-;;     (search-forward "x")
-;;     (backward-char 1)
-;;     (should (memq 'font-lock-variable-name-face (faces-at-point))))
-;;   (with-highlighted-groovy "if ((x = \"foo\") && x =~ y) {"
-;;     (search-forward "x")
-;;     (backward-char 1)
-;;     (should (memq 'font-lock-variable-name-face (faces-at-point))))
-;;   (with-highlighted-groovy "Foo y; x = 1"
-;;     (search-forward "x")
-;;     (backward-char 1)
-;;     (should (memq 'font-lock-variable-name-face (faces-at-point))))
-;;   (with-highlighted-groovy "(x =~ /bar/)"
-;;     (search-forward "x")
-;;     (backward-char 1)
-;;     (should (not (memq 'font-lock-variable-name-face (faces-at-point)))))
-;;   (with-highlighted-groovy "x == bar"
-;;     (search-forward "x")
-;;     (backward-char 1)
-;;     (should (not (memq 'font-lock-variable-name-face (faces-at-point)))))
-;;   (with-highlighted-groovy "@Foo(x=false)"
-;;     (search-forward "x")
-;;     (backward-char 1)
-;;     (should (not (memq 'font-lock-variable-name-face (faces-at-point))))))
+(ert-deftest groovy-highlight-variable-assignment ()
+  "Highlight 'x = 1' as variable."
+  (let ((groovy-highlight-assignments t))
+    (with-highlighted-groovy "x = 1"
+      (search-forward "x")
+      (backward-char 1)
+      (should (memq 'font-lock-variable-name-face (faces-at-point))))
+    (with-highlighted-groovy "if (x = \"foo\") {"
+      (search-forward "x")
+      (backward-char 1)
+      (should (memq 'font-lock-variable-name-face (faces-at-point))))
+    (with-highlighted-groovy "Foo y; x = 1"
+      (search-forward "x")
+      (backward-char 1)
+      (should (memq 'font-lock-variable-name-face (faces-at-point))))
+    (with-highlighted-groovy "(x =~ /bar/)"
+      (search-forward "x")
+      (backward-char 1)
+      (should (not (memq 'font-lock-variable-name-face (faces-at-point)))))
+    (with-highlighted-groovy "x == bar"
+      (search-forward "x")
+      (backward-char 1)
+      (should (not (memq 'font-lock-variable-name-face (faces-at-point)))))
+    (with-highlighted-groovy "@Foo(x=false)"
+      (search-forward "x")
+      (backward-char 1)
+      (should (not (memq 'font-lock-variable-name-face (faces-at-point)))))))
 
 (ert-deftest groovy-highlight-variable-declaration ()
   "Highlight 'def x' as variable."

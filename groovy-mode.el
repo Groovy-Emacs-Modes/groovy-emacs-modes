@@ -112,7 +112,7 @@
 
 (defvar groovy-class-regexp
   "^[ \t\n\r]*\\(final\\|abstract\\|public\\|[ \t\n\r]\\)*class[ \t\n\r]+\\([a-zA-Z0-9_$]+\\)[^;{]*{"
-  "Matches class names in groovy code, select match 2")
+  "Matches class names in groovy code, select match 2.")
 
 (defvar groovy-interface-regexp
   (rx-to-string
@@ -123,12 +123,17 @@
      (group (regexp ,groovy-symbol-regexp))))
   "Matches interface names in groovy code.")
 
+(defvar groovy-annotation-regexp
+  (rx "@" symbol-start (+ (or (syntax word) (syntax symbol))) symbol-end)
+  "Match annotation names.")
+
+
 (defvar groovy-imenu-regexp
   (list ;;(list "Functions" groovy-function-regexp 2)
         (list "Classes" groovy-class-regexp 2)
         (list "Interfaces" groovy-interface-regexp 1)
         (list "Closures" "def[ \t]+\\([a-zA-Z_][a-zA-Z0-9_]*\\)[ \t]*=[ \t]*{" 1))
-  "Imenu expression for Groovy")
+  "Imenu expression for Groovy.")
 
 
 ;; For compatibility with Emacs < 24
@@ -206,8 +211,7 @@
     (,(rx symbol-start "it" symbol-end)
      . font-lock-variable-name-face)
     ;; Annotations
-    (,(rx "@" symbol-start (+ (or (syntax word) (syntax symbol))) symbol-end)
-     . groovy-annotation-face)
+    (,groovy-annotation-regexp . groovy-annotation-face)
     (,groovy-type-regexp 1 font-lock-type-face)
     ;; Highlight declarations of the form 'def foo' and 'public void fooBar()'.
     (groovy-declaration-search 1 font-lock-variable-name-face)
@@ -217,6 +221,7 @@
     ;;    (group (+ (or (syntax word) (syntax symbol))))
     ;;    (0+ space) "=")
     ;;  1 font-lock-variable-name-face)
+    ;;(groovy-highlight-ass)
     ;; Highlight $foo and $foo.bar string interpolation, but not \$foo.
     (,(lambda (limit)
         (let ((pattern
@@ -331,8 +336,14 @@
                 "char"
                 "void")
                symbol-end
-               (? "[]")))))))))
-
+               (? "[]"))))))))
+  (defconst groovy-variable-assignment-regexp
+    (rx-to-string
+     `(seq
+       (regexp ,groovy-symbol-regexp)
+       (* space)
+       "="
+       (not (any "~" "="))))))
 
 (defun groovy-special-variable-search (limit)
   "Search for text marked with `groovy-special-variable' to LIMIT."
@@ -343,7 +354,7 @@
   (groovy-special-prop-search limit 'groovy-function-name))
 
 (defun groovy-special-prop-search (limit prop-name)
-  "Search for PROP-NAME text-property to LIMIT."
+  "Search until to LIMIT for PROP-NAME text-property."
   (let* ((pos (point))
          (chg (next-single-property-change pos prop-name nil limit)))
     (when (and chg (> chg pos))
@@ -363,15 +374,33 @@
                         (1- count)
                       (1+ count)))))))
 
+(defun groovy-variable-assignment-search (limit)
+  "Highlight variable assignments up to LIMIT."
+  (let ((case-fold-search nil)
+        (pos (point))
+        (match (re-search-forward groovy-variable-assignment-regexp limit t)))
+    (when (and match (> match pos))
+      (or (save-excursion
+            (save-match-data
+              (not (string-match
+                    (rx-to-string
+                     `(seq
+                       (regexp ,groovy-annotation-regexp)
+                       (* space)
+                       (zero-or-one (seq "(" (* (not (any ")")))))
+                       eol))
+                    (buffer-substring-no-properties (line-beginning-position) (match-beginning 0))))))
+          (groovy-variable-assignment-search limit)))))
+
 (defun groovy-declaration-search (limit)
   "Find variable declarations up to LIMIT."
   (remove-text-properties (point)
                           (or limit (point-max))
                           '(groovy-special-variable nil
                             groovy-function-name nil))
-  (let* ((pos (point))
-         (case-fold-search nil)
-         (match (re-search-forward groovy-declaration-regexp limit t)))
+  (let ((pos (point))
+        (case-fold-search nil)
+        (match (re-search-forward groovy-declaration-regexp limit t)))
     (when (and match (> match pos))
       (or (and
            (not (groovy--in-string-p))
@@ -571,6 +600,11 @@ dollar-slashy-quoted strings."
   :safe #'integerp
   :group 'groovy)
 
+(defcustom groovy-highlight-assignments nil
+  "Highlight variable assignments after declaration."
+  :type 'boolean
+  :group 'groovy)
+
 (defvar groovy-annotation-face 'groovy-annotation-face)
 (defface groovy-annotation-face
   '((default :inherit font-lock-constant-face))
@@ -766,8 +800,13 @@ initialization.
 
 Key bindings:
 \\{groovy-mode-map}"
+  ;; if `groovy-highlight-assignments' add to keyword search.
+  (when groovy-highlight-assignments
+    (add-to-list 'groovy-font-lock-keywords
+          '(groovy-variable-assignment-search 1 font-lock-variable-name-face) t))
   (set (make-local-variable 'font-lock-defaults)
        '(groovy-font-lock-keywords))
+
   (set (make-local-variable 'syntax-propertize-function)
        groovy-syntax-propertize-function)
   (setq imenu-generic-expression groovy-imenu-regexp)
