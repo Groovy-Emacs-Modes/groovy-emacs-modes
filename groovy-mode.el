@@ -335,7 +335,7 @@ The function name is the second group in the regexp.")
   (defconst groovy-declaration-regexp
     (rx-to-string
      `(seq
-       (or bol "(" ";")
+       (or bol "(" ";" "," "{")
        ;;(* space)
        (regexp ,groovy-declaration-keyword-regex)
        (seq
@@ -401,7 +401,7 @@ The function name is the second group in the regexp.")
       (or (and
            (not (groovy--in-string-p))
            (not (groovy--comment-p (point)))
-           (let ((match-s (match-string 0)))
+           (let ((match-s (s-trim (match-string 0))))
              (when (s-ends-with-p "<" match-s)
                (groovy--travel-parameritized-types))
              (let ((var-match
@@ -412,19 +412,22 @@ The function name is the second group in the regexp.")
                ;; matches initial regexp, now look at special cases
                (if var-match
                    ;; if the var ends in a '(' it's a method name
-                   (unless (save-excursion
-                             (re-search-forward (rx point (* space) "(") nil t))
+                   (if (re-search-forward (rx point (* space) "(") nil t)
+                       (backward-char 1)
                      ;; if declaration followed by ',' then it's of form `String a, b,c'
-                     (let ((md (match-data)))
-                       (with-silent-modifications
-                         (while (re-search-forward (rx-to-string
-                                                    `(seq point (* space) "," (* space)
-                                                          (regexp ,groovy-symbol-regexp)))
-                                                   limit t)
-                           (put-text-property (match-beginning 1) (match-end 1)
-                                              'groovy-special-variable (match-data))))
-                       (set-match-data md)
-                       t))
+                     (unless (or (s-starts-with-p "(" match-s)
+                                 (s-starts-with-p "{" match-s)
+                                 (s-starts-with-p "," match-s))
+                       (let ((md (match-data)))
+                         (with-silent-modifications
+                           (while (re-search-forward (rx-to-string
+                                                      `(seq point (* space) "," (* space)
+                                                            (regexp ,groovy-symbol-regexp)))
+                                                     limit t)
+                             (put-text-property (match-beginning 1) (match-end 1)
+                                                'groovy-special-variable (match-data))))
+                         (set-match-data md)))
+                     t)
                  ;; didn't match regexp, check if it's of form `def (a, b, c) = [1, 2, 3]'
                    (when (re-search-forward
                           (rx-to-string
