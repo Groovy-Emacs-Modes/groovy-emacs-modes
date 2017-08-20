@@ -212,16 +212,10 @@
      . font-lock-variable-name-face)
     ;; Annotations
     (,groovy-annotation-regexp . groovy-annotation-face)
+    ;; highlight types 'Foo', 'char'
     (,groovy-type-regexp 1 font-lock-type-face)
     ;; Highlight declarations of the form 'def foo' and 'public void fooBar()'.
     (groovy-declaration-search 1 font-lock-variable-name-face)
-    ;; Highlight variables of the form 'foo = '
-    ;; (,(rx
-    ;;    line-start (0+ space)
-    ;;    (group (+ (or (syntax word) (syntax symbol))))
-    ;;    (0+ space) "=")
-    ;;  1 font-lock-variable-name-face)
-    ;;(groovy-highlight-ass)
     ;; Highlight $foo and $foo.bar string interpolation, but not \$foo.
     (,(lambda (limit)
         (let ((pattern
