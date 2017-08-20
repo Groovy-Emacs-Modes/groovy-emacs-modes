@@ -629,15 +629,6 @@ dollar-slashy-quoted strings."
   (buffer-substring-no-properties
    (line-beginning-position) (line-end-position)))
 
-(defun groovy--current-line-no-comment ()
-  "The current line enclosing point."
-  (save-excursion
-    (goto-char (line-end-position))
-    (if (groovy--comment-p (point))
-        (buffer-substring-no-properties
-         (line-beginning-position) (nth 8 (syntax-ppss)))
-      (groovy--current-line))))
-
 (defun groovy--enclosing-blocks ()
   "Return a list of the block keywords that enclose point.
 
