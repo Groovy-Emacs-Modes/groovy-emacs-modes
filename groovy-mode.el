@@ -129,7 +129,8 @@
 
 
 (defvar groovy-imenu-regexp
-  (list ;;(list "Functions" groovy-function-regexp 2)
+  (list ;; FIXME: removed `groovy-function-regexp', now is using a function.
+        ;;(list "Functions" groovy-function-regexp 2)
         (list "Classes" groovy-class-regexp 2)
         (list "Interfaces" groovy-interface-regexp 1)
         (list "Closures" "def[ \t]+\\([a-zA-Z_][a-zA-Z0-9_]*\\)[ \t]*=[ \t]*{" 1))
@@ -300,6 +301,7 @@
   (defconst groovy-declaration-keyword-regex
     (rx
      (* space)
+     symbol-start
      (group (*
              (seq
               (+ (or "def" "public" "private" "protected" "final" "static"
