@@ -8,7 +8,7 @@
 ;;  Maintainer:  Russel Winder <russel@winder.org.uk>
 ;;  Created: 2006-08-01
 ;;  Keywords: languages
-;; Package-Requires: ((s "1.11.0"))
+;; Package-Requires: ((s "1.12.0"))
 
 ;;  This program is free software: you can redistribute it and/or modify
 ;;  it under the terms of the GNU General Public License as published by
