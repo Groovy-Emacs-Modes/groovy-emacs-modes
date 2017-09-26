@@ -135,7 +135,10 @@ then run BODY."
      ;; current Emacs instance.
      (delay-mode-hooks (groovy-mode))
      ;; Ensure we've syntax-highlighted the whole buffer.
-     (font-lock-ensure (point-min) (point-max))
+     (if (fboundp 'font-lock-ensure)
+         (font-lock-ensure)
+       (with-no-warnings
+         (font-lock-fontify-buffer)))
      ,@body))
 
 (ert-deftest groovy-highlight-triple-double-quote ()
