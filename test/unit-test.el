@@ -135,7 +135,10 @@ then run BODY."
      ;; current Emacs instance.
      (delay-mode-hooks (groovy-mode))
      ;; Ensure we've syntax-highlighted the whole buffer.
-     (font-lock-ensure (point-min) (point-max))
+     (if (fboundp 'font-lock-ensure)
+         (font-lock-ensure)
+       (with-no-warnings
+         (font-lock-fontify-buffer)))
      ,@body))
 
 (ert-deftest groovy-highlight-triple-double-quote ()
@@ -235,3 +238,87 @@ then run BODY."
    "def bar /* foo */"
    (search-forward "foo")
    (should (not (memq 'font-lock-string-face (faces-at-point))))))
+
+(ert-deftest groovy-highlight-variable-assignment ()
+  "Highlight 'x = 1' as variable."
+  (let ((groovy-highlight-assignments t))
+    (with-highlighted-groovy "x = 1"
+      (search-forward "x")
+      (backward-char 1)
+      (should (memq 'font-lock-variable-name-face (faces-at-point))))
+    (with-highlighted-groovy "if (x = \"foo\") {"
+      (search-forward "x")
+      (backward-char 1)
+      (should (memq 'font-lock-variable-name-face (faces-at-point))))
+    (with-highlighted-groovy "Foo y; x = 1"
+      (search-forward "x")
+      (backward-char 1)
+      (should (memq 'font-lock-variable-name-face (faces-at-point))))
+    (with-highlighted-groovy "(x =~ /bar/)"
+      (search-forward "x")
+      (backward-char 1)
+      (should (not (memq 'font-lock-variable-name-face (faces-at-point)))))
+    (with-highlighted-groovy "x == bar"
+      (search-forward "x")
+      (backward-char 1)
+      (should (not (memq 'font-lock-variable-name-face (faces-at-point)))))
+    (with-highlighted-groovy "@Foo(x=false)"
+      (search-forward "x")
+      (backward-char 1)
+      (should (not (memq 'font-lock-variable-name-face (faces-at-point)))))))
+
+(ert-deftest groovy-highlight-variable-declaration ()
+  "Highlight 'def x' as variable."
+  (with-highlighted-groovy "def x"
+    (search-forward "x")
+    (backward-char 1)
+    (should (memq 'font-lock-variable-name-face (faces-at-point))))
+  (with-highlighted-groovy "private String x = 1"
+    (search-forward "x")
+    (backward-char 1)
+    (should (memq 'font-lock-variable-name-face (faces-at-point))))
+  (with-highlighted-groovy "Foo x; def y = 1"
+    (search-forward "x")
+    (backward-char 1)
+    (should (memq 'font-lock-variable-name-face (faces-at-point))))
+  (with-highlighted-groovy "List<Map<String, Object>> x"
+    (search-forward "x")
+    (backward-char 1)
+    (should (memq 'font-lock-variable-name-face (faces-at-point))))
+  (with-highlighted-groovy "String a, b, c, d"
+    (search-forward "b")
+    (backward-char 1)
+    (should (memq 'font-lock-variable-name-face (faces-at-point))))
+  (with-highlighted-groovy "def (a, b, c) = [1, 2, 3]"
+    (search-forward "b")
+    (backward-char 1)
+    (should (memq 'font-lock-variable-name-face (faces-at-point))))
+  (with-highlighted-groovy "[:].each { String x, def y ->"
+    (search-forward "y")
+    (backward-char 1)
+    (should (memq 'font-lock-variable-name-face (faces-at-point))))
+  (with-highlighted-groovy "private void fooBar(Foo x) {"
+    (search-forward "x")
+    (backward-char 1)
+    (should (memq 'font-lock-variable-name-face (faces-at-point)))))
+
+(ert-deftest groovy-highlight-variables ()
+  "Make sure symbols aren't being highlighted that shouldn't be."
+  (with-highlighted-groovy "def (a, b, c) = [1, x, 3]"
+    (search-forward "x")
+    (backward-char 1)
+    (should (not (memq 'font-lock-variable-name-face (faces-at-point)))))
+  (with-highlighted-groovy "def (a, b, c) = foo(1, x, 3)"
+    (search-forward "x")
+    (backward-char 1)
+    (should (not (memq 'font-lock-variable-name-face (faces-at-point)))))
+  (with-highlighted-groovy "x"
+    (should (not (memq 'font-lock-variable-name-face (faces-at-point))))))
+
+(ert-deftest groovy-highlight-functions ()
+  (with-highlighted-groovy "private void fooBar(Foo x) {"
+    (search-forward "foo")
+    (should (memq 'font-lock-function-name-face (faces-at-point))))
+  (with-highlighted-groovy "private List<String> fooBar() {"
+    (search-forward "foo")
+    (should (memq 'font-lock-function-name-face (faces-at-point)))))
