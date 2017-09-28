@@ -85,6 +85,7 @@
 ;;;###autoload
 (add-to-list 'interpreter-mode-alist '("groovy" . groovy-mode))
 
+;; Regexp Constants
 (defconst groovy-type-regexp
   (rx symbol-start
       (group
@@ -104,18 +105,66 @@
       (? "[]"))
   "Matches types, where the name is first group.")
 
-(defvar groovy-symbol-regexp
+(defconst groovy-declaration-keyword-regex
+  (rx
+   (* space)
+   symbol-start
+   (group (*
+           (seq
+            (+ (or "def" "public" "private" "protected" "final" "static"
+                   "abstract" "synchronized" "native")
+               (+ space))))))
+  "Matches declaration keywords.")
+
+(defconst groovy-declaration-regexp
+  (rx-to-string
+   `(seq
+     (or bol "(" ";" "," "{")
+     (regexp ,groovy-declaration-keyword-regex)
+     (seq
+      (* space)
+      symbol-start
+      (group
+       (or
+        ;; Treat Foo, FooBar and FFoo as type names, but not FOO.
+        ;; also Foo<Bar>
+        (seq (+ upper) lower (* (syntax word)) (or " " "<"))
+        (seq (or
+              "def"
+              "byte"
+              "short"
+              "int"
+              "long"
+              "float"
+              "double"
+              "boolean"
+              "char"
+              "void")
+             symbol-end
+             (? "[]")))))))
+  "Matches declarations of the type 'def FooBar<?>'.")
+
+(defconst groovy-symbol-regexp
   (rx
    symbol-start
    (group (+ (or (syntax word) (syntax symbol))))
    symbol-end)
   "A variable name or a type name.")
 
-(defvar groovy-class-regexp
+(defconst groovy-variable-assignment-regexp
+  (rx-to-string
+   `(seq
+     (regexp ,groovy-symbol-regexp)
+     (* space)
+     "="
+     (not (any "~" "="))))
+  "Matches variable assignments of the type 'a = 1'.")
+
+(defconst groovy-class-regexp
   "^[ \t\n\r]*\\(final\\|abstract\\|public\\|[ \t\n\r]\\)*class[ \t\n\r]+\\([a-zA-Z0-9_$]+\\)[^;{]*{"
   "Matches class names in groovy code, select match 2.")
 
-(defvar groovy-interface-regexp
+(defconst groovy-interface-regexp
   (rx-to-string
    `(seq
      line-start (0+ space)
@@ -124,11 +173,11 @@
      (group (regexp ,groovy-symbol-regexp))))
   "Matches interface names in groovy code.")
 
-(defvar groovy-annotation-regexp
+(defconst groovy-annotation-regexp
   (rx "@" symbol-start (+ (or (syntax word) (syntax symbol))) symbol-end)
   "Match annotation names.")
 
-
+;; vars
 (defvar groovy-imenu-regexp
   (list ;; FIXME: removed `groovy-function-regexp', now is using a function.
         ;;(list "Functions" groovy-function-regexp 2)
@@ -298,49 +347,7 @@
   (defconst groovy-dollar-slashy-open-regex
     (rx "$/"))
   (defconst groovy-dollar-slashy-close-regex
-    (rx "/$"))
-  (defconst groovy-declaration-keyword-regex
-    (rx
-     (* space)
-     symbol-start
-     (group (*
-             (seq
-              (+ (or "def" "public" "private" "protected" "final" "static"
-                     "abstract" "synchronized" "native")
-                 (+ space)))))))
-  (defconst groovy-declaration-regexp
-    (rx-to-string
-     `(seq
-       (or bol "(" ";" "," "{")
-       (regexp ,groovy-declaration-keyword-regex)
-       (seq
-        (* space)
-        symbol-start
-        (group
-         (or
-          ;; Treat Foo, FooBar and FFoo as type names, but not FOO.
-          ;; also Foo<Bar>
-          (seq (+ upper) lower (* (syntax word)) (or " " "<"))
-          (seq (or
-                "def"
-                "byte"
-                "short"
-                "int"
-                "long"
-                "float"
-                "double"
-                "boolean"
-                "char"
-                "void")
-               symbol-end
-               (? "[]"))))))))
-  (defconst groovy-variable-assignment-regexp
-    (rx-to-string
-     `(seq
-       (regexp ,groovy-symbol-regexp)
-       (* space)
-       "="
-       (not (any "~" "="))))))
+    (rx "/$")))
 
 (defun groovy-special-variable-search (limit)
   "Search for text marked with `groovy-special-variable' to LIMIT."
