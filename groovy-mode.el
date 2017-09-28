@@ -347,9 +347,7 @@
   (defconst groovy-dollar-slashy-open-regex
     (rx "$/"))
   (defconst groovy-dollar-slashy-close-regex
-    (rx "/$"))
-
-  )
+    (rx "/$")))
 
 (defun groovy-special-variable-search (limit)
   "Search for text marked with `groovy-special-variable' to LIMIT."
