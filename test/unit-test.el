@@ -212,6 +212,7 @@ then run BODY."
   ;; // on a single line is a comment, not an empty slashy-string.
   (with-highlighted-groovy "// foo\n//\n"
     (search-forward "\n")
+    (backward-char)
     (should (memq 'font-lock-comment-face (faces-at-point)))))
 
 (ert-deftest groovy-highlight-slashy-string ()
