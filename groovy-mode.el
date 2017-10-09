@@ -586,14 +586,14 @@ dollar-slashy-quoted strings."
     (0 (ignore (groovy-stringify-triple-quote))))
    (groovy-triple-single-quoted-string-regex
     (0 (ignore (groovy-stringify-triple-quote))))
+   ;; http://groovy-lang.org/syntax.html#_slashy_string
+   (groovy-slashy-open-regex
+    (0 (ignore (groovy-stringify-slashy-string))))
    ;; http://groovy-lang.org/syntax.html#_dollar_slashy_string
    (groovy-dollar-slashy-open-regex
     (0 (ignore (groovy-stringify-dollar-slashy-open))))
    (groovy-dollar-slashy-close-regex
-    (0 (ignore (groovy-stringify-dollar-slashy-close))))
-   ;; http://groovy-lang.org/syntax.html#_slashy_string
-   (groovy-slashy-open-regex
-    (0 (ignore (groovy-stringify-slashy-string))))))
+    (0 (ignore (groovy-stringify-dollar-slashy-close))))))
 
 (defgroup groovy nil
   "A Groovy major mode."
