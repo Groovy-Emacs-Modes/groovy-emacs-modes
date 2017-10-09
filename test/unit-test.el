@@ -235,10 +235,15 @@ then run BODY."
     (search-forward "bar")
     (forward-char -1)
     (should (not (memq 'font-lock-string-face (faces-at-point)))))
+  ;; Don't get confused by $ inside a slashy string.
+  (with-highlighted-groovy "x = /$ foo $/"
+    (search-forward "foo")
+    (should (memq 'font-lock-string-face (faces-at-point))))
+  ;; Don't get confused by comments.
   (with-highlighted-groovy
-   "def bar /* foo */"
-   (search-forward "foo")
-   (should (not (memq 'font-lock-string-face (faces-at-point))))))
+      "def bar /* foo */"
+    (search-forward "foo")
+    (should (not (memq 'font-lock-string-face (faces-at-point))))))
 
 (ert-deftest groovy-highlight-variable-assignment ()
   "Highlight 'x = 1' as variable."
