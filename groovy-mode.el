@@ -270,8 +270,10 @@
     ;; Highlight $foo and $foo.bar string interpolation, but not \$foo.
     (,(lambda (limit)
         (let ((pattern
-               (rx "$" (+ (or (syntax word) (syntax symbol))) symbol-end
-                   (? "." (+ (or (syntax word) (syntax symbol))) symbol-end)))
+               (rx (not (any "\\"))
+                   (group
+                    "$" (+ (or (syntax word) (syntax symbol))) symbol-end
+                    (? "." (+ (or (syntax word) (syntax symbol))) symbol-end))))
               res match-data)
           (save-match-data
             ;; Search forward for $foo and terminate on the first
@@ -279,18 +281,14 @@
             (while (and
                     (not res)
                     (re-search-forward pattern limit t))
-
               (let* ((string-delimiter-pos (nth 8 (syntax-ppss)))
-                     (string-delimiter (char-after string-delimiter-pos))
-                     (escaped-p (eq (char-before (match-beginning 0))
-                                    ?\\)))
+                     (string-delimiter (char-after string-delimiter-pos)))
                 (when (and (groovy--in-string-p)
                            ;; Interpolation does not apply in single-quoted strings.
-                           (not (eq string-delimiter ?'))
-                           (not escaped-p)
-                           (not (equal (match-string 0) "$$")))
+                           (not (eq string-delimiter ?')))
                   (setq res (point))
-                  (setq match-data (match-data))))))
+                  ;; Set match data to the group we matched.
+                  (setq match-data (list (match-beginning 1) (match-end 1)))))))
           ;; Set match data and return point so we highlight this
           ;; instance.
           (when res
