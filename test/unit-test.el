@@ -184,9 +184,22 @@ then run BODY."
   (with-highlighted-groovy "x = \"$foo\""
     (search-forward "$")
     (should (memq 'font-lock-variable-name-face (faces-at-point))))
+  ;; Triple-double-quoted strings have interpolation.
   (with-highlighted-groovy "x = \"\"\"$foo\"\"a\""
     (search-forward "$")
-    (should (memq 'font-lock-variable-name-face (faces-at-point)))))
+    (should (memq 'font-lock-variable-name-face (faces-at-point))))
+  ;; Escaped $ are not interpolated.
+  (with-highlighted-groovy "x = \"\\$foo\""
+    (search-forward "$")
+    (should (not (memq 'font-lock-variable-name-face (faces-at-point)))))
+  ;; Sequences of interpolations do not need to be separated.
+  (with-highlighted-groovy "x = \"$foo$bar\""
+    (search-forward "b")
+    (should (memq 'font-lock-variable-name-face (faces-at-point))))
+  ;; Interpolation after an escaped dollar, i.e. \$$foo
+  (with-highlighted-groovy "x = \"\\$$foo\""
+    (search-forward "f")
+    (should (memq 'font-lock-variable-name-face (faces-at-point)))) )
 
 (ert-deftest groovy-highlight-interpolation-single-quotes ()
   "Ensure we do not highlight interpolation in single-quoted strings."
