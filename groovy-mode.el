@@ -800,6 +800,10 @@ Key bindings:
   (set (make-local-variable 'font-lock-defaults)
        '(groovy-font-lock-keywords))
 
+  ;; set electric characters
+  (setq-local electric-indent-chars
+              (append "{}():;,[]" electric-indent-chars))
+
   (set (make-local-variable 'syntax-propertize-function)
        groovy-syntax-propertize-function)
   (setq imenu-generic-expression groovy-imenu-regexp)
