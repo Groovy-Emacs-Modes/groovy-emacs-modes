@@ -505,14 +505,18 @@
 (defun groovy-stringify-slashy-string ()
   "Put `syntax-table' property on slashy-quoted strings (strings
 of the form /foo/)."
-  ;; We match to characters ?/ ?something, so move backwards so point
-  ;; is on the /.
   (save-excursion
+    ;; We matched two characters starting with "/", e.g. "/x". Point is
+    ;; currently after the "x". Move back so we're at the start of the
+    ;; slashy-string contents, just after the "/".
     (backward-char 1)
     (let* ((slash-pos (point))
+           (prev-char (char-before (- slash-pos 1)))
+           (prev-prev-char (char-before (- slash-pos 2)))
            ;; Look at the previous char: // is a comment, not an empty
-           ;; slashy-string.
-           (singleline-comment (eq (char-before (1- (point))) ?/))
+           ;; slashy-string. /foo\// does not contain a comment though.
+           (singleline-comment (and (eq prev-char ?/)
+                                    (not (eq prev-prev-char ?\\))))
            ;; Look at this syntax on the previous char: if we're on a /*
            ;; or a */ this isn't a slashy-string.
            (multiline-comment (prog2

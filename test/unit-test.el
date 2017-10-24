@@ -256,6 +256,13 @@ then run BODY."
   (with-highlighted-groovy
       "def bar /* foo */"
     (search-forward "foo")
+    (should (not (memq 'font-lock-string-face (faces-at-point)))))
+  ;; Don't get confused by escaped backslashes at the end of a slashy
+  ;; string.
+  (with-highlighted-groovy
+      "x = /foo\\// + bar"
+    (search-forward "bar")
+    (forward-char -1)
     (should (not (memq 'font-lock-string-face (faces-at-point))))))
 
 (ert-deftest groovy-highlight-variable-assignment ()
