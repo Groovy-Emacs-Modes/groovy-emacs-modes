@@ -12,7 +12,7 @@ with `run-groovy` and Grails project navigation with `grails-mode`.
 
 ## Installation
 
-These modes should work with Emacs 23, but we recommend Emacs 24+.
+Emacs 24+ is required.
 
 These packages are available on [MELPA](http://melpa.org/). To use
 rolling releases:
