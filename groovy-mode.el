@@ -8,6 +8,7 @@
 ;; Maintainer:  Russel Winder <russel@winder.org.uk>
 ;; Created: 2006-08-01
 ;; Keywords: languages
+;; Version: 2.0
 ;; Package-Requires: ((s "1.12.0") (emacs "24.3"))
 
 ;; This program is free software: you can redistribute it and/or modify
@@ -39,10 +40,6 @@
 ;;; Bugs:
 ;;  Bug tracking is currently handled using the GitHub issue tracker at
 ;;  https://github.com/Groovy-Emacs-Modes/groovy-emacs-modes/issues
-
-;;; Versions:
-;;  This mode is available on MELPA which tracks the mainline Git repository on GitHub, so there is a rolling release
-;;  system based on commits to the mainline.
 
 ;;; Notes:
 ;;  Should we support GString / template markup ( e.g. `<%' and `%>') specially?
