@@ -47,15 +47,6 @@
 ;;; Notes:
 ;;  Should we support GString / template markup ( e.g. `<%' and `%>') specially?
 
-;;;  TODO:
-;;   Issues with this code are managed via the project issue management
-;;   on GitHub: https://github.com/Groovy-Emacs-Modes/groovy-emacs-modes/issues?state=open
-
-;; History:
-;;   History is tracked in the Git repository rather than in this file.
-;;   See https://github.com/Groovy-Emacs-Modes/groovy-emacs-modes/commits/master
-
-;;----------------------------------------------------------------------------
 ;;; Code:
 
 (require 's)
