@@ -655,6 +655,22 @@ Then this function returns (\"def\" \"if\" \"switch\")."
        (seq "default" symbol-end))
       ":"))
 
+(defun groovy--effective-paren-depth (pos)
+  "Return the paren depth of position POS, but ignore repeated parens on the same line."
+  (let ((paren-depth 0)
+        (syntax (syntax-ppss pos)))
+    (save-excursion
+      (while (> (nth 0 syntax) 0)
+        (setq paren-depth (1+ paren-depth))
+        ;; Go to the most recent open paren.
+        (goto-char (nth 1 syntax))
+        ;; Move the previous line, ignoring any other parens on the
+        ;; same line.
+        (goto-char (1- (line-beginning-position)))
+
+        (setq syntax (syntax-ppss (point)))))
+    paren-depth))
+
 (defun groovy-indent-line ()
   "Indent the current line according to the number of parentheses."
   (interactive)
@@ -662,7 +678,7 @@ Then this function returns (\"def\" \"if\" \"switch\")."
          (syntax-bol (syntax-ppss (line-beginning-position)))
          (multiline-string-p (nth 3 syntax-bol))
          (multiline-comment-p (nth 4 syntax-bol))
-         (current-paren-depth (nth 0 syntax-bol))
+         (current-paren-depth (groovy--effective-paren-depth (line-beginning-position)))
          (current-paren-pos (nth 1 syntax-bol))
          (text-after-paren
           (when current-paren-pos

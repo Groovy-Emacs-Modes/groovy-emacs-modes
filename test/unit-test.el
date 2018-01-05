@@ -67,6 +67,13 @@ bar()
     }
 }"))
 
+(ert-deftest groovy-indent-repeated-parens ()
+  "We should only indent by one level inside closures."
+  (should-preserve-indent
+   "def x = [[
+    1
+]]"))
+
 (ert-deftest groovy-indent-method-call ()
   "We should increase indent for method calls"
   (should-preserve-indent
