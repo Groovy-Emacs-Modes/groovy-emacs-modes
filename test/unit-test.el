@@ -80,6 +80,15 @@ bar()
    "foo
     .bar()"))
 
+(ert-deftest groovy-indent-try ()
+  "We should indent try/finally statements correctly."
+  (should-preserve-indent
+   "try {
+    foo()
+} finally {
+    bar()
+}"))
+
 (ert-deftest groovy-indent-switch ()
   "We should indent case statements less than their bodies."
   ;; Simple switch statement

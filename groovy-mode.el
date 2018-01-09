@@ -658,15 +658,19 @@ Then this function returns (\"def\" \"if\" \"switch\")."
 (defun groovy--effective-paren-depth (pos)
   "Return the paren depth of position POS, but ignore repeated parens on the same line."
   (let ((paren-depth 0)
-        (syntax (syntax-ppss pos)))
+        (syntax (syntax-ppss pos))
+        (current-line (line-number-at-pos pos)))
     (save-excursion
+      ;; Keep going whilst we're inside parens.
       (while (> (nth 0 syntax) 0)
-        (setq paren-depth (1+ paren-depth))
-        ;; Go to the most recent open paren.
+        ;; Go to the most recent enclosing open paren.
         (goto-char (nth 1 syntax))
-        ;; Move the previous line, ignoring any other parens on the
-        ;; same line.
-        (goto-char (1- (line-beginning-position)))
+
+        ;; Count this paren, but only if it was on another line.
+        (let ((new-line (line-number-at-pos (point))))
+          (unless (= new-line current-line)
+            (setq paren-depth (1+ paren-depth))
+            (setq current-line new-line)))
 
         (setq syntax (syntax-ppss (point)))))
     paren-depth))
