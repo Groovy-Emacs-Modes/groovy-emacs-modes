@@ -17,7 +17,8 @@
      (setq indent-tabs-mode nil)
      (shut-up
        (indent-region (point-min) (point-max)))
-     (should (equal (buffer-string) ,result))))
+     (should (equal (buffer-substring-no-properties (point-min) (point-max))
+                    ,result))))
 
 (defmacro should-preserve-indent (source)
   "Assert that SOURCE does not change when indented."
