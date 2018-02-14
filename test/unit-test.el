@@ -34,6 +34,11 @@ bar()
 }"
    "def foo() {
     bar()
+}")
+  ;; Ensure we're not confused by comments.
+  (should-preserve-indent
+   "def foo() { // blah
+    def bar = 123
 }"))
 
 (ert-deftest groovy-indent-infix-operator ()
@@ -365,3 +370,17 @@ then run BODY."
   (with-highlighted-groovy "private List<String> fooBar() {"
     (search-forward "foo")
     (should (memq 'font-lock-function-name-face (faces-at-point)))))
+
+(ert-deftest groovy--remove-comments ()
+  (should
+   (equal
+    (groovy--remove-comments "foo\nbar")
+    "foo\nbar"))
+  (should
+   (equal
+    (groovy--remove-comments "foo // bar")
+    "foo "))
+  (should
+   (equal
+    (groovy--remove-comments "foo /* bar */ baz")
+    "foo  baz")))
