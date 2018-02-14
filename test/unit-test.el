@@ -17,7 +17,8 @@
      (setq indent-tabs-mode nil)
      (shut-up
        (indent-region (point-min) (point-max)))
-     (should (equal (buffer-string) ,result))))
+     (should (equal (buffer-substring-no-properties (point-min) (point-max))
+                    ,result))))
 
 (defmacro should-preserve-indent (source)
   "Assert that SOURCE does not change when indented."
@@ -33,6 +34,11 @@ bar()
 }"
    "def foo() {
     bar()
+}")
+  ;; Ensure we're not confused by comments.
+  (should-preserve-indent
+   "def foo() { // blah
+    def bar = 123
 }"))
 
 (ert-deftest groovy-indent-infix-operator ()
@@ -364,3 +370,17 @@ then run BODY."
   (with-highlighted-groovy "private List<String> fooBar() {"
     (search-forward "foo")
     (should (memq 'font-lock-function-name-face (faces-at-point)))))
+
+(ert-deftest groovy--remove-comments ()
+  (should
+   (equal
+    (groovy--remove-comments "foo\nbar")
+    "foo\nbar"))
+  (should
+   (equal
+    (groovy--remove-comments "foo // bar")
+    "foo "))
+  (should
+   (equal
+    (groovy--remove-comments "foo /* bar */ baz")
+    "foo  baz")))

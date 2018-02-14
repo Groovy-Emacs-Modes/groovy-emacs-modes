@@ -9,7 +9,7 @@
 ;; Created: 2006-08-01
 ;; Keywords: languages
 ;; Version: 2.1
-;; Package-Requires: ((s "1.12.0") (emacs "24.3"))
+;; Package-Requires: ((s "1.12.0") (emacs "24.3") (dash "2.13.0"))
 
 ;; This program is free software: you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -41,6 +41,7 @@
 ;;; Code:
 
 (require 's)
+(require 'dash)
 
 (defvar groovy-mode-syntax-table
   (let ((table (make-syntax-table)))
@@ -655,6 +656,12 @@ Then this function returns (\"def\" \"if\" \"switch\")."
        (seq "default" symbol-end))
       ":"))
 
+(defun groovy--remove-comments (src)
+  "Remove all comments from a string of groovy source code."
+  (->> src
+       (replace-regexp-in-string (rx "/*" (*? anything) "*/") "")
+       (replace-regexp-in-string (rx "//" (* not-newline)) "")))
+
 (defun groovy--effective-paren-depth (pos)
   "Return the paren depth of position POS, but ignore repeated parens on the same line."
   (let ((paren-depth 0)
@@ -689,9 +696,10 @@ Then this function returns (\"def\" \"if\" \"switch\")."
             (save-excursion
               (goto-char current-paren-pos)
               (s-trim
-               (buffer-substring
-                (1+ current-paren-pos)
-                (line-end-position))))))
+               (groovy--remove-comments
+                (buffer-substring
+                 (1+ current-paren-pos)
+                 (line-end-position)))))))
          (current-line (s-trim (groovy--current-line)))
          has-closing-paren)
     ;; If this line starts with a closing paren, unindent by one level.
