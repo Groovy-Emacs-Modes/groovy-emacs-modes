@@ -270,6 +270,11 @@ then run BODY."
     (search-forward "bar")
     (forward-char -1)
     (should (not (memq 'font-lock-string-face (faces-at-point)))))
+  ;; Don't get confused by tilde at the start of a slashy string.
+  (with-highlighted-groovy "somePattern = ~/+/;
+final int foo = -1;"
+    (search-forward "foo")
+    (should (not (memq 'font-lock-string-face (faces-at-point)))))
   ;; Don't get confused by $ inside a slashy string.
   (with-highlighted-groovy "x = /$ foo $/"
     (search-forward "foo")
