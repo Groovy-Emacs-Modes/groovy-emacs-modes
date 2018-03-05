@@ -463,21 +463,29 @@
 (defun groovy-stringify-triple-quote ()
   "Put `syntax-table' property on triple-quoted strings."
   ;; This applies to both ''' and """
-  (let* ((string-end-pos (point))
-         (string-start-pos (- string-end-pos 3))
+  (let* ((delim-end-pos (point))
+         (delim-start-pos (- delim-end-pos 3))
          (ppss (prog2
                    (backward-char 3)
                    (syntax-ppss)
-                 (forward-char 3))))
-    (unless (nth 4 ppss) ;; not inside comment
-      (if (nth 8 ppss)
-          ;; We're in a string, so this must be the closing triple-quote.
-          ;; Put | on the last ' or " character.
-          (put-text-property (1- string-end-pos) string-end-pos
-                             'syntax-table (string-to-syntax "|"))
+                 (forward-char 3)))
+         (in-comment (nth 4 ppss))
+         (string-start-pos (nth 8 ppss)))
+    (unless in-comment
+      (if string-start-pos
+          (let ((open-delimiter (char-after string-start-pos))
+                (current-delimiter (char-after delim-start-pos)))
+            ;; Ensure that we're closing with the same triple-quote
+            ;; type as we opened with, because '''""""''' is a legal
+            ;; string literal.
+            (when (equal open-delimiter current-delimiter)
+              ;; We're in a string, so this must be the closing triple-quote.
+              ;; Put | on the last ' or " character.
+              (put-text-property (1- delim-end-pos) delim-end-pos
+                                 'syntax-table (string-to-syntax "|"))))
         ;; We're not in a string, so this is the opening triple-quote.
         ;; Put | on the first ' or " character.
-        (put-text-property string-start-pos (1+ string-start-pos)
+        (put-text-property delim-start-pos (1+ delim-start-pos)
                            'syntax-table (string-to-syntax "|"))))))
 
 (defun groovy--comment-p (pos)
