@@ -164,15 +164,23 @@ then run BODY."
      ,@body))
 
 (ert-deftest groovy-highlight-triple-double-quote ()
-  "Ensure we handle single \" correctly inside a triple-double-quoted string."
+  ;; Ensure we handle single " correctly inside a triple-double-quoted string.
   (with-highlighted-groovy "x = \"\"\"foo \" bar \"\"\""
     (search-forward "bar")
+    (should (eq (face-at-point) 'font-lock-string-face)))
+  ;; Ensure we handle triple-single-quotes inside a triple-double-quotes.
+  (with-highlighted-groovy "foo = \"\"\"aaa ''' bbb ''' ccc\"\"\""
+    (search-forward "bbb")
     (should (eq (face-at-point) 'font-lock-string-face))))
 
 (ert-deftest groovy-highlight-triple-single-quote ()
-  "Ensure we handle single \" correctly inside a triple-double-quoted string."
+  ;; Ensure we handle single ' correctly inside a triple-single-quoted string.
   (with-highlighted-groovy "x = '''foo ' bar '''"
     (search-forward "bar")
+    (should (eq (face-at-point) 'font-lock-string-face)))
+  ;; Ensure we handle triple-double-quotes inside a triple-single-quotes.
+  (with-highlighted-groovy "foo = '''xxx \"\"\" yyy \"\"\" zzz'''"
+    (search-forward "yyy")
     (should (eq (face-at-point) 'font-lock-string-face))))
 
 (ert-deftest groovy-highlight-annotation ()
