@@ -49,6 +49,9 @@ bar()
   (should-preserve-indent
    "def a = b+
     1")
+  (should-preserve-indent
+   "def a = b ||
+    1")
   ;; Don't get confused by commented-out lines.
   (should-preserve-indent
    "// def a = b+
@@ -260,8 +263,12 @@ then run BODY."
 
 (ert-deftest groovy-highlight-slashy-string ()
   "Highlight /foo/ as a string."
-  ;; simple case
+  ;; simple case 1
   (with-highlighted-groovy "x = /foo/"
+    (search-forward "foo")
+    (should (memq 'font-lock-string-face (faces-at-point))))
+  ;; simple case 2
+  (with-highlighted-groovy "x || /foo/"
     (search-forward "foo")
     (should (memq 'font-lock-string-face (faces-at-point))))
   ;; multiline
