@@ -174,7 +174,11 @@ then run BODY."
   ;; Ensure we handle triple-single-quotes inside a triple-double-quotes.
   (with-highlighted-groovy "foo = \"\"\"aaa ''' bbb ''' ccc\"\"\""
     (search-forward "bbb")
-    (should (eq (face-at-point) 'font-lock-string-face))))
+    (should (eq (face-at-point) 'font-lock-string-face)))
+  ;; Ensure that we handle / at the end of a triple-quoted string.
+  (with-highlighted-groovy "blah \"\"\"baz/\"\"\"\n// foo"
+    (search-forward "f")
+    (should (eq (face-at-point) 'font-lock-comment-face))))
 
 (ert-deftest groovy-highlight-triple-single-quote ()
   ;; Ensure we handle single ' correctly inside a triple-single-quoted string.
