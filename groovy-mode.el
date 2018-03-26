@@ -496,48 +496,51 @@
 (defun groovy-stringify-slashy-string ()
   "Put `syntax-table' property on slashy-quoted strings (strings
 of the form /foo/)."
-  (save-excursion
-    ;; We matched two characters starting with "/", e.g. "/x". Point is
-    ;; currently after the "x". Move back so we're at the start of the
-    ;; slashy-string contents, just after the "/".
-    (backward-char 1)
-    (let* ((slash-pos (point))
-           (prev-char (char-before (- slash-pos 1)))
-           (prev-prev-char (char-before (- slash-pos 2)))
-           ;; Look at the previous char: // is a comment, not an empty
-           ;; slashy-string. /foo\// does not contain a comment though.
-           (singleline-comment (and (eq prev-char ?/)
-                                    (not (eq prev-prev-char ?\\))))
-           ;; Look at this syntax on the previous char: if we're on a /*
-           ;; or a */ this isn't a slashy-string.
-           (multiline-comment (prog2
-                                  (backward-char 1)
-                                  (groovy--comment-p (point))
-                                (forward-char 1)))
-           (string-open-pos (nth 8 (syntax-ppss))))
+  (let* ((final-pos (point))
+         ;; We matched two characters starting with "/", e.g. "/x". Point is
+         ;; currently after the "x". Calculate the position just after the "/".
+         (slash-pos (1- (point)))
+         (prev-char (char-before (- slash-pos 1)))
+         (prev-prev-char (char-before (- slash-pos 2)))
+         ;; Look at the previous char: // is a comment, not an empty
+         ;; slashy-string. /foo\// does not contain a comment though.
+         (singleline-comment (and (eq prev-char ?/)
+                                  (not (eq prev-prev-char ?\\))))
+         ;; Look at this syntax on the previous char: if we're on a /*
+         ;; or a */ this isn't a slashy-string.
+         (multiline-comment (save-excursion
+                              (goto-char (1- slash-pos))
+                              (groovy--comment-p (point))))
+         (string-open-pos (nth 8 (syntax-ppss slash-pos))))
 
-      (unless (or singleline-comment multiline-comment)
-        (if string-open-pos
-            ;; If we're in a string, that was opened with /, then this
-            ;; is the closing /. This prevents confusion with """ /* """
-            (when (eq (char-after string-open-pos) ?/)
+    (unless (or singleline-comment multiline-comment)
+      (if string-open-pos
+          ;; If we're in a string, that was opened with /, then this
+          ;; is the closing /. This prevents confusion with """ /* """
+          (if (eq (char-after string-open-pos) ?/)
               (put-text-property (1- slash-pos) slash-pos
-                                 'syntax-table (string-to-syntax "|")))
-          ;; We're not in a string, so this is the opening / or division
-          (let ((str (buffer-substring-no-properties (line-beginning-position) slash-pos)))
-            ;; test if operator precedes slash. if so, slashy-string, otherwise division and ignore
-            (when (string-match
-                   (rx
-                    (or bol
-                        (or "+" "-" "=" "+=" "-=" "==" "!="
-                            "<" "<=" ">" ">=" "&&" "||" "?" "?:" ":"
-                            "=~" "==~" "<=>" "(" "~"))
-                    (0+ whitespace)
-                    "/"
-                    eol)
-                   str)
-              (put-text-property (1- slash-pos) slash-pos
-                                 'syntax-table (string-to-syntax "|")))))))))
+                                 'syntax-table (string-to-syntax "|"))
+            ;; We're in a string, but not a slashy string. Ensure we
+            ;; don't put point beyond the /, to avoid confusion with
+            ;; """foo/""".
+            (setq final-pos (1- final-pos)))
+        ;; We're not in a string, so this is the opening / or division.
+        (let ((str (buffer-substring-no-properties (line-beginning-position) slash-pos)))
+          ;; Test if an operator precedes this slash. if so, slashy-string,
+          ;; otherwise it's division so ignore.
+          (when (string-match
+                 (rx
+                  (or bol
+                      (or "+" "-" "=" "+=" "-=" "==" "!="
+                          "<" "<=" ">" ">=" "&&" "||" "?" "?:" ":"
+                          "=~" "==~" "<=>" "(" "~"))
+                  (0+ whitespace)
+                  "/"
+                  eol)
+                 str)
+            (put-text-property (1- slash-pos) slash-pos
+                               'syntax-table (string-to-syntax "|"))))))
+    (goto-char final-pos)))
 
 (defun groovy-stringify-dollar-slashy-open ()
   "Put `syntax-table' property on the opening $/ of
