@@ -29,48 +29,74 @@
 (ert-deftest groovy-indent-function ()
   "We should indent according to the number of parens."
   (should-indent-to
-   "def foo() {
+   "
+def foo() {
 bar()
 }"
-   "def foo() {
+   "
+def foo() {
     bar()
 }")
   ;; Ensure we're not confused by comments.
   (should-preserve-indent
-   "def foo() { // blah
+   "
+def foo() { // blah
     def bar = 123
 }"))
 
 (ert-deftest groovy-indent-infix-operator ()
   "We should increase indent after infix operators."
   (should-preserve-indent
-   "def a = b +
+   "
+def a = b +
     1")
   (should-preserve-indent
-   "def a = b+
+   "
+def a = b+
     1")
   (should-preserve-indent
-   "def a = b ||
+   "
+def a = 'foo'+
+    'bar'")
+  (should-preserve-indent
+   "
+def a = b ||
     1")
   ;; Don't get confused by commented-out lines.
   (should-preserve-indent
-   "// def a = b+
+   "
+// def a = b+
 1")
   ;; Don't get confused by lines that end by / when it isn't division.
   (should-preserve-indent
-   "def x = /foo/
+   "
+def x = /foo/
 1"))
 
+(ert-deftest groovy-indent-after-ending-comma ()
+  "We should increase indent after comma at end-of-line."
+  ;; Indent line after infix comma.
+  (should-preserve-indent
+   "
+func arg1,
+    arg2")
+  (should-preserve-indent
+   "
+func 'arg1',
+    'arg2'")
+  )
 (ert-deftest groovy-indent-infix-closure ()
   "We should only indent by one level inside closures."
   (should-preserve-indent
-   "def foo() {
+   "
+def foo() {
     def f = { ->
         \"foo\"
     }
 }")
   (should-preserve-indent
-   "def foo() {
+   "
+def foo() {
     def f = { def bar ->
         \"foo\"
     }
@@ -79,20 +105,23 @@ bar()
 (ert-deftest groovy-indent-repeated-parens ()
   "We should only indent by one level inside closures."
   (should-preserve-indent
-   "def x = [[
+   "
+def x = [[
     1
 ]]"))
 
 (ert-deftest groovy-indent-method-call ()
   "We should increase indent for method calls"
   (should-preserve-indent
-   "foo
+   "
+foo
     .bar()"))
 
 (ert-deftest groovy-indent-try ()
   "We should indent try/finally statements correctly."
   (should-preserve-indent
-   "try {
+   "
+try {
     foo()
 } finally {
     bar()
@@ -102,7 +131,8 @@ bar()
   "We should indent case statements less than their bodies."
   ;; Simple switch statement
   (should-preserve-indent
-   "switch (foo) {
+   "
+switch (foo) {
     case Class1:
         bar()
         break
@@ -111,7 +141,8 @@ bar()
 }")
   ;; Braces within switch statements.
   (should-preserve-indent
-   "switch (foo) {
+   "
+switch (foo) {
     case Class1:
         if (bar) {
             bar()
@@ -122,12 +153,14 @@ bar()
 }")
   ;; Ensure we handle colons correctly.
   (should-preserve-indent
-   "switch (foo) {
+   "
+switch (foo) {
     case Class1 :
         bar()
 }")
   (should-preserve-indent
-   "switch (foo) {
+   "
+switch (foo) {
     case Class1:
         x? y: z
 }")
@@ -137,15 +170,22 @@ bar()
   "Ensure we handle indents inside lists correctly."
   ;; If we have a single empty [ on a line, we should increase by one
   ;; tab stop.
-  (should-preserve-indent "def x = [
+  (should-preserve-indent "
+def x = [
     1,
     2,
 ]")
   ;; But if we have values after the [, we should line up subsequent
   ;; lines.
-  (should-preserve-indent "def x = [1,
+  (should-preserve-indent "
+def x = [1,
          2,
          3,
+]")
+  ;; Infix operator inside list
+  (should-preserve-indent "def x = [
+    1 +
+    2
 ]"))
 
 (defmacro with-highlighted-groovy (src &rest body)
