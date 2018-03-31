@@ -71,10 +71,27 @@ def a = b ||
   (should-preserve-indent
    "
 def x = /foo/
-1"))
+1")
+  (should-preserve-indent
+   "
+def a = b()+
+    1")
+  (should-preserve-indent
+   "
+def a = b[3]+
+    1")
+  (should-preserve-indent
+   "
+def a = b--+
+    1")
+  (should-preserve-indent
+   "
+def a = b+++
+    1"))
 
-(ert-deftest groovy-indent-after-ending-comma ()
-  "We should increase indent after comma at end-of-line."
+(ert-deftest groovy-indent-after-comma ()
+  "We should increase indent after comma at end-of-line. Unless
+we are in a list, see `groovy-indent-list'."
   ;; Indent line after infix comma.
   (should-preserve-indent
    "
@@ -84,7 +101,17 @@ func arg1,
    "
 func 'arg1',
     'arg2'")
-  )
+  (should-preserve-indent
+   "
+def func(int a, int b) {
+    call_method 'arg1',
+        'arg2'
+    call_method [
+        'arg1',
+        'arg2',
+    ]
+}"))
+
 (ert-deftest groovy-indent-infix-closure ()
   "We should only indent by one level inside closures."
   (should-preserve-indent
@@ -183,9 +210,11 @@ def x = [1,
          3,
 ]")
   ;; Infix operator inside list
-  (should-preserve-indent "def x = [
-    1 +
-    2
+  (should-preserve-indent "
+def x = [
+    'a string ' +
+        'another string',
+    'another element'
 ]"))
 
 (defmacro with-highlighted-groovy (src &rest body)
