@@ -328,7 +328,9 @@
   (defconst groovy-dollar-slashy-open-regex
     (rx "$/"))
   (defconst groovy-dollar-slashy-close-regex
-    (rx "/$")))
+    (rx "/$"))
+  (defconst groovy-postfix-operator-regex
+    (rx (or "++" "--"))))
 
 (defun groovy-special-variable-search (limit)
   "Search for text marked with `groovy-special-variable' to LIMIT."
@@ -611,23 +613,44 @@ dollar-slashy-quoted strings."
   "Face for highlighting annotations in Groovy mode."
   :group 'groovy)
 
+(defconst groovy-expression-end-regexp
+  (rx-to-string
+   `(or symbol-end
+        space
+        (syntax string-quote)
+        (syntax close-parenthesis)
+        (regexp ,groovy-postfix-operator-regex))))
+
+(defun groovy--ends-with-token-p (token-list str)
+  "Return t if STR ends with one of the tokens in TOKEN-LIST."
+  (string-match-p
+   (rx-to-string
+    `(seq
+      (regexp ,groovy-expression-end-regexp)
+      (or ,@token-list)
+      (0+ space)
+      line-end))
+    str))
+
 (defun groovy--ends-with-infix-p (str)
   "Does STR end with an infix operator?"
-  (string-match-p
-   (rx
-    (or symbol-end space)
-    ;; http://docs.groovy-lang.org/next/html/documentation/core-operators.html
-    (or "+" "-" "*" "/" "%" "**"
-        "=" "+=" "-=" "*=" "/=" "%=" "**="
-        "==" "!=" "<" "<=" ">" ">=" "<<=" ">>=" ">>>=" "&=" "^=" "|="
-        "&&" "||"
-        "&" "|" "^" "<<" "<<<" ">>" ">>>"
-        "?" "?:" ":"
-        "=~" "==~"
-        "<=>" "<>"
-        "in" "as")
-    (0+ space)
-    line-end)
+  (groovy--ends-with-token-p
+   ;; http://docs.groovy-lang.org/next/html/documentation/core-operators.html
+   '("+" "-" "*" "/" "%" "**"
+     "=" "+=" "-=" "*=" "/=" "%=" "**="
+     "==" "!=" "<" "<=" ">" ">=" "<<=" ">>=" ">>>=" "&=" "^=" "|="
+     "&&" "||"
+     "&" "|" "^" "<<" "<<<" ">>" ">>>"
+     "?" "?:" ":"
+     "=~" "==~"
+     "<=>" "<>"
+     "in" "as")
+   str))
+
+(defun groovy--ends-with-comma-p (str)
+  "Does STR end with a comma?"
+  (groovy--ends-with-token-p
+   '(",")
    str))
 
 (defun groovy--current-line ()
@@ -702,6 +725,8 @@ Then this function returns (\"def\" \"if\" \"switch\")."
          (multiline-comment-p (nth 4 syntax-bol))
          (current-paren-depth (groovy--effective-paren-depth (line-beginning-position)))
          (current-paren-pos (nth 1 syntax-bol))
+         (current-paren-character
+          (when (nth 1 syntax-bol) (char-after (nth 1 syntax-bol))))
          (text-after-paren
           (when current-paren-pos
             (save-excursion
@@ -773,8 +798,11 @@ Then this function returns (\"def\" \"if\" \"switch\")."
                                        (groovy--in-string-at-p (- line-end 1)))))))
         (when (and prev-line
                    (not end-slashy-string)
-                   (groovy--ends-with-infix-p prev-line)
-                   (not (s-matches-p groovy--case-regexp prev-line)))
+                   (not (s-matches-p groovy--case-regexp prev-line))
+                   (or (groovy--ends-with-infix-p prev-line)
+                       (and (groovy--ends-with-comma-p prev-line)
+                            (not (eq current-paren-character ?\[))
+                            (not has-closing-paren))))
           (setq indent-level (1+ indent-level)))
 
         ;; If this line is .methodCall() then we should indent one
