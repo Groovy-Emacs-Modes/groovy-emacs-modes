@@ -294,10 +294,6 @@ then run BODY."
 final int foo = -1;"
     (search-forward "foo")
     (should (not (memq 'font-lock-string-face (faces-at-point)))))
-  ;; Don't get confused by $ inside a slashy string.
-  (with-highlighted-groovy "x = /$ foo $/"
-    (search-forward "foo")
-    (should (memq 'font-lock-string-face (faces-at-point))))
   ;; Don't get confused by comments.
   (with-highlighted-groovy
       "def bar /* foo */"
@@ -309,6 +305,24 @@ final int foo = -1;"
       "x = /foo\\// + bar"
     (search-forward "bar")
     (forward-char -1)
+    (should (not (memq 'font-lock-string-face (faces-at-point))))))
+
+(ert-deftest groovy-highlight-slashy-string--inner-dollar ()
+  "Don't get confused by slashy-strings that contain $."
+  (with-highlighted-groovy "x = /$ foo $/"
+    (search-forward "foo")
+    (should (memq 'font-lock-string-face (faces-at-point)))))
+
+(ert-deftest groovy-highlight-dollar-slashy-string ()
+  "Highlight $/foo/$ as a string."
+  ;; Ensure that the contents are highlighted as a string.
+  (with-highlighted-groovy "x = $/foo/$"
+    (search-forward "foo")
+    (should (memq 'font-lock-string-face (faces-at-point))))
+  ;; Ensure that later code is not highlighted as a string
+  (with-highlighted-groovy "x = $/foo/$
+bar"
+    (search-forward "b")
     (should (not (memq 'font-lock-string-face (faces-at-point))))))
 
 (ert-deftest groovy-highlight-variable-assignment ()
