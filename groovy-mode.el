@@ -565,12 +565,26 @@ dollar-slashy-quoted strings."
          ;; highlighting is correct even when the mode is started
          ;; initially.
          (in-string (nth 3 (parse-partial-sexp (point-min) delimiter-end-pos))))
-    (unless (or (groovy--comment-p delimiter-end-pos) (not in-string)
-                ;; Ignore $/$ as it's escaped and not a /$ close delimiter.
-                (looking-back (rx "$/$") 3))
+    (cond
+     ((groovy--comment-p delimiter-end-pos)
+      ;; Do nothing inside comments.
+      nil)
+     ((not in-string)
+      ;; If we're not in a string, then /$ is the start of a normal
+      ;; slashy-string, e.g. /$ foo/.
+      ;;
+      ;; Note that both `groovy-stringify-dollar-slashy-close' and
+      ;; `groovy-stringify-slashy-string' expect to be two characters
+      ;; after the /, so we don't need to move point before calling.
+      (groovy-stringify-slashy-string))
+     ((looking-back (rx "$/$") 3)
+      ;; Ignore $/$ as it's escaped and not a /$ close delimiter.
+      nil)
+     (t
+      ;; Otherwise, this is indeed closing a dollar-slashy-string.
       ;; Mark the $ in /$ as a generic string delimiter.
       (put-text-property (- delimiter-end-pos 1) delimiter-end-pos
-                         'syntax-table (string-to-syntax "|")))))
+                         'syntax-table (string-to-syntax "|"))))))
 
 
 (defconst groovy-syntax-propertize-function
@@ -580,18 +594,32 @@ dollar-slashy-quoted strings."
    ;; comment.
    (groovy-shebang-regex
     (0 "< b"))
+
+   ;; WARNING: These are a pain to refactor. Emacs tries each one of
+   ;; these regexps in order. It resumes parsing from wherever point
+   ;; is left at the end of the function call.
+   ;;
+   ;; As a result, it's important that these functions move point
+   ;; backwards if they may have moved over another delimiter (e.g. /$
+   ;; and /). However, they must all move point by a non-zero amount,
+   ;; or you get an infinite loop during fontification.
+   ;;
+   ;; The unit tests are pretty thorough, so they should catch any
+   ;; issues.
    (groovy-triple-double-quoted-string-regex
     (0 (ignore (groovy-stringify-triple-quote))))
    (groovy-triple-single-quoted-string-regex
     (0 (ignore (groovy-stringify-triple-quote))))
-   ;; http://groovy-lang.org/syntax.html#_slashy_string
-   (groovy-slashy-open-regex
-    (0 (ignore (groovy-stringify-slashy-string))))
+
    ;; http://groovy-lang.org/syntax.html#_dollar_slashy_string
    (groovy-dollar-slashy-open-regex
     (0 (ignore (groovy-stringify-dollar-slashy-open))))
    (groovy-dollar-slashy-close-regex
-    (0 (ignore (groovy-stringify-dollar-slashy-close))))))
+    (0 (ignore (groovy-stringify-dollar-slashy-close))))
+
+   ;; http://groovy-lang.org/syntax.html#_slashy_string
+   (groovy-slashy-open-regex
+    (0 (ignore (groovy-stringify-slashy-string))))))
 
 (defgroup groovy nil
   "A Groovy major mode."
