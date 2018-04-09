@@ -313,24 +313,24 @@
     (groovy-special-variable-search 1 font-lock-variable-name-face)
     (groovy-function-name-search 1 font-lock-function-name-face)))
 
-(eval-when-compile
-  ;; http://groovy-lang.org/syntax.html#_shebang_line
-  (defconst groovy-shebang-regex
-    (rx buffer-start "#"))
-  (defconst groovy-triple-double-quoted-string-regex
-    (rx "\"\"\""))
-  (defconst groovy-triple-single-quoted-string-regex
-    (rx "'''"))
-  (defconst groovy-slashy-open-regex
-    ;; /foo/ is a slashy-string, but // or /* are not.
-    (rx "/" (not (any "/" "*"))))
 
-  (defconst groovy-dollar-slashy-open-regex
-    (rx "$/"))
-  (defconst groovy-dollar-slashy-close-regex
-    (rx "/$"))
-  (defconst groovy-postfix-operator-regex
-    (rx (or "++" "--"))))
+;; http://groovy-lang.org/syntax.html#_shebang_line
+(defconst groovy-shebang-regex
+  (rx buffer-start "#"))
+(defconst groovy-triple-double-quoted-string-regex
+  (rx "\"\"\""))
+(defconst groovy-triple-single-quoted-string-regex
+  (rx "'''"))
+(defconst groovy-slashy-open-regex
+  ;; /foo/ is a slashy-string, but // or /* are not.
+  (rx "/" (not (any "/" "*"))))
+
+(defconst groovy-dollar-slashy-open-regex
+  (rx "$/"))
+(defconst groovy-dollar-slashy-close-regex
+  (rx "/$"))
+(defconst groovy-postfix-operator-regex
+  (rx (or "++" "--")))
 
 (defun groovy-special-variable-search (limit)
   "Search for text marked with `groovy-special-variable' to LIMIT."
