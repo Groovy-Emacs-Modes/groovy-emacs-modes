@@ -249,6 +249,12 @@ then run BODY."
     (search-forward "f")
     (should (eq (face-at-point) 'font-lock-comment-face))))
 
+(ert-deftest groovy-highlight-triple-double-quote--containing-slashy ()
+  "Don't get confused by /$ in a triple-quoted string."
+  (with-highlighted-groovy "\"\"\"\n/$\n\"\"\"\nfoo = 1"
+    (search-forward "foo")
+    (should (not (eq (face-at-point) 'font-lock-string-face)))))
+
 (ert-deftest groovy-highlight-triple-single-quote ()
   ;; Ensure we handle single ' correctly inside a triple-single-quoted string.
   (with-highlighted-groovy "x = '''foo ' bar '''"
