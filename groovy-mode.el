@@ -328,9 +328,10 @@
   (defconst groovy-dollar-slashy-open-regex
     (rx "$/"))
   (defconst groovy-dollar-slashy-close-regex
-    (rx "/$"))
-  (defconst groovy-postfix-operator-regex
-    (rx (or "++" "--"))))
+    (rx "/$")))
+
+(defconst groovy-postfix-operator-regex
+  (rx (or "++" "--")))
 
 (defun groovy-special-variable-search (limit)
   "Search for text marked with `groovy-special-variable' to LIMIT."
