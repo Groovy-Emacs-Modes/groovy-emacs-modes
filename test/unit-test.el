@@ -91,7 +91,7 @@ def a = b+++
 
 (ert-deftest groovy-indent-after-comma ()
   "We should increase indent after comma at end-of-line. Unless
-we are in a list, see `groovy-indent-list'."
+we are in a list, see test `groovy-indent-list'."
   ;; Indent line after infix comma.
   (should-preserve-indent
    "
@@ -111,6 +111,15 @@ def func(int a, int b) {
         'arg2',
     ]
 }"))
+
+(ert-deftest groovy-indent-call-with-comma ()
+  "We should not increase indent after a comma in a function call."
+  (should-preserve-indent
+   "
+foobar(
+    baz: 1,
+    biz: 2,
+)"))
 
 (ert-deftest groovy-indent-infix-closure ()
   "We should only indent by one level inside closures."
