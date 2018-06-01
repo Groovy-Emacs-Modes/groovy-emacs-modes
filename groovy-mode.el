@@ -749,6 +749,19 @@ Then this function returns (\"def\" \"if\" \"switch\")."
         (setq syntax (syntax-ppss (point)))))
     paren-depth))
 
+(defun groovy--prev-code-line ()
+  "Move point to the previous non-comment line, and return its contents."
+  (catch 'done
+    (while t
+      ;; Move backwards one line, or throw 'done if we're at the
+      ;; beginning of the buffer.
+      (unless (zerop (forward-line -1))
+        (throw 'done nil))
+
+      ;; If this line is not a comment, return it.
+      (unless (groovy--comment-p (line-end-position))
+        (throw 'done (buffer-substring (point) (line-end-position)))))))
+
 (defun groovy-indent-line ()
   "Indent the current line according to the number of parentheses."
   (interactive)
@@ -813,30 +826,39 @@ Then this function returns (\"def\" \"if\" \"switch\")."
 
      ;; Indent according to the number of parens.
      (t
-      (let ((indent-level current-paren-depth)
-            prev-line
-            end-slashy-string)
-        ;; If the previous line ended `foo +` then this line should be
-        ;; indented one more level.
+      (let ((indent-level current-paren-depth))
+        ;; If the previous line ended with an arithmetic operator like
+        ;; `foo +`, then this line should be indented one more level.
         (save-excursion
-          ;; Try to go back one line.
-          (when (zerop (forward-line -1))
-            ;; Ignore the previous line if it's a comment or end slashy-string
-            (let ((line-end (line-end-position)))
-              (unless (groovy--comment-p line-end)
-                (setq prev-line (buffer-substring (point) (line-end-position))))
-              ;; check if the last thing is a slashy-string end
-              (setq end-slashy-string (and
-                                       (eq (char-before line-end) ?/)
-                                       (groovy--in-string-at-p (- line-end 1)))))))
-        (when (and prev-line
+          (let* ((prev-line (groovy--prev-code-line))
+                 (line-end (line-end-position))
+                 ;; Check if the last thing is a slashy-string end, so we
+                 ;; distinguish a string `/foo bar/` from arithmetic `x /`.
+                 (end-slashy-string (and
+                                     prev-line
+                                     (eq (char-before line-end) ?/)
+                                     (groovy--in-string-at-p (- line-end 1)))))
+            (when (and
+                   prev-line
                    (not end-slashy-string)
                    (not (s-matches-p groovy--case-regexp prev-line))
                    (or (groovy--ends-with-infix-p prev-line)
                        (and (groovy--ends-with-comma-p prev-line)
                             (not (memq current-paren-character (list ?\[ ?\()))
                             (not has-closing-paren))))
-          (setq indent-level (1+ indent-level)))
+              (setq indent-level (1+ indent-level)))))
+
+        ;; If previous lines are block statements with optional
+        ;; parens, indent for each block.
+        (save-excursion
+          (let* ((prev-line (groovy--prev-code-line))
+                 (block-pattern (rx (0+ space) symbol-start (or "if" "for" "while" "else") symbol-end)))
+            (while (and prev-line
+                        (s-matches-p block-pattern prev-line))
+              (unless (s-ends-with-p "{" (s-trim prev-line))
+                (setq indent-level (1+ indent-level)))
+              ;; Keey moving up until we hit a line that isn't a block statement.
+              (setq prev-line (groovy--prev-code-line)))))
 
         ;; If this line is .methodCall() then we should indent one
         ;; more level.

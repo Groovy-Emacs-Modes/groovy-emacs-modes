@@ -44,6 +44,55 @@ def foo() { // blah
     def bar = 123
 }"))
 
+(ert-deftest groovy-indent-optional-braces ()
+  "We should indent block statements even if they don't have braces."
+  ;; Basic block keywords.
+  (should-preserve-indent
+   "
+while (true)
+    foo()")
+  (should-preserve-indent
+   "
+for (i = 0; i < 10; i++)
+    foo()")
+  ;; If and else.
+  (should-preserve-indent
+   "
+if (true)
+    foo()
+else
+    bar()")
+  ;; Consider the previous statement if it's also a block statement.
+  (should-preserve-indent
+   "
+if (true)
+    if (true)
+        foo()")
+  ;; Ignore the previous statement otherwise.
+  (should-preserve-indent
+   "
+bar()
+if (true)
+    foo()")
+  ;; The subsequent line should not be indented.
+  (should-preserve-indent
+   "
+if (true)
+    foo()
+bar()")
+  ;; Don't get confused by comments.
+  (should-preserve-indent
+   "
+if (true)
+    // stuff
+    foo()")
+  ;; Proceed as normal if we do actually have braces.
+  (should-preserve-indent
+   "
+if (true) {
+    foo()
+}"))
+
 (ert-deftest groovy-indent-infix-operator ()
   "We should increase indent after infix operators."
   (should-preserve-indent
