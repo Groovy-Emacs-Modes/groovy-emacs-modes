@@ -752,15 +752,19 @@ Then this function returns (\"def\" \"if\" \"switch\")."
 (defun groovy--prev-code-line ()
   "Move point to the previous non-comment line, and return its contents."
   (catch 'done
-    (while t
-      ;; Move backwards one line, or throw 'done if we're at the
-      ;; beginning of the buffer.
-      (unless (zerop (forward-line -1))
-        (throw 'done nil))
+	(let (code-text)
+      (while t
+		;; Move backwards one line, or throw 'done if we're at the
+		;; beginning of the buffer.
+		(unless (zerop (forward-line -1))
+          (throw 'done nil))
 
-      ;; If this line is not a comment, return it.
-      (unless (groovy--comment-p (line-end-position))
-        (throw 'done (buffer-substring (point) (line-end-position)))))))
+		;; Get the part of the line that isn't in a comment.
+		;; If this isn't just white space, return it as a code line.
+		(parse-partial-sexp (point) (line-end-position) nil nil nil t)
+		(setf code-text (buffer-substring (line-beginning-position) (point)))
+		(unless (s-blank-str-p code-text)
+          (throw 'done code-text))))))
 
 (defun groovy-indent-line ()
   "Indent the current line according to the number of parentheses."
