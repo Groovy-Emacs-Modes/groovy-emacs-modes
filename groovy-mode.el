@@ -749,18 +749,42 @@ Then this function returns (\"def\" \"if\" \"switch\")."
         (setq syntax (syntax-ppss (point)))))
     paren-depth))
 
+(defun groovy--extract-line-without-comments ()
+  "Extracts the part of the current line that is not a comment."
+  (let (code-text
+        (start-pos (line-beginning-position))
+        (end-pos (line-end-position)))
+    ;; Unless this line is already inside a multiline comment,
+    ;; use parse-partial-sexp to get the part of the line not
+    ;; a part of a comment.
+    (unless (groovy--comment-p start-pos)
+      (save-excursion
+        (parse-partial-sexp start-pos end-pos nil nil nil t)
+        (setq code-text (buffer-substring start-pos (point)))
+
+        ;; Unless we went all the way to the end of the line, we
+        ;; encountered a comment delimiter // or /*. Remove this delimiter.
+        (unless (= (point) end-pos)
+          (setq code-text (substring code-text 0 -2)))))
+
+    ;; Return the part of the line that isn't a comment (may be nil).
+    code-text))
+
 (defun groovy--prev-code-line ()
   "Move point to the previous non-comment line, and return its contents."
   (catch 'done
-    (while t
-      ;; Move backwards one line, or throw 'done if we're at the
-      ;; beginning of the buffer.
-      (unless (zerop (forward-line -1))
-        (throw 'done nil))
+    (let (code-text)
+      (while t
+        ;; Move backwards one line, or throw 'done if we're at the
+        ;; beginning of the buffer.
+        (unless (zerop (forward-line -1))
+          (throw 'done nil))
 
-      ;; If this line is not a comment, return it.
-      (unless (groovy--comment-p (line-end-position))
-        (throw 'done (buffer-substring (point) (line-end-position)))))))
+        ;; Get the part of the line that isn't in a comment.
+        ;; If this isn't just white space, return it as a code line.
+        (setq code-text (groovy--extract-line-without-comments))
+        (unless (s-blank-str-p code-text)
+          (throw 'done code-text))))))
 
 (defun groovy-indent-line ()
   "Indent the current line according to the number of parentheses."

@@ -42,7 +42,17 @@ def foo() {
    "
 def foo() { // blah
     def bar = 123
-}"))
+}")
+  ;; Comments containing keywords should not affect indentation.
+  (should-preserve-indent
+   "
+/* if for while else */
+def foo = true")
+  ;; Repeat with double slash comments.
+  (should-preserve-indent
+   "
+// if for while else
+def foo = true"))
 
 (ert-deftest groovy-indent-optional-braces ()
   "We should indent block statements even if they don't have braces."
