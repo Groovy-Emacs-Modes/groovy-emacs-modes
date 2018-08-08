@@ -786,6 +786,39 @@ Then this function returns (\"def\" \"if\" \"switch\")."
         (unless (s-blank-str-p code-text)
           (throw 'done code-text))))))
 
+ (defun groovy--line-contains-block-statements-p ()
+  "Returns t if the current line contains a block statement keyword like if, for, while, else."
+  (save-excursion
+    (goto-char (line-beginning-position))
+    (let* ((pattern
+	    (rx (0+ space) symbol-start (or "if" "for" "while" "else") symbol-end))
+	   (limit (line-end-position))
+           current-match
+           syntax-state-of-match)
+      ;; Search entire line for one of the keywords. If we find
+      ;; the keyword and it is NOT inside a string or comment, 
+      ;; throw true. Otherwise, if no match is found, throw false
+      (catch 'done
+        (while t
+	  ;; Get the next match
+          (setq current-match
+                (re-search-forward pattern limit t 1))
+	  
+          ;; Return nil if no more matches are found.
+          (unless current-match
+            (throw 'done nil))
+	  
+          ;; Get the syntax state of the matching keyword.
+          (save-excursion
+            (setq syntax-state-of-match
+                  (syntax-ppss (match-beginning 0))))
+	  
+          ;; Unless the match is inside a string or comment,
+          ;; it's a valid match and we should return true.
+          (unless (or (nth 3 syntax-state-of-match) ; string
+                      (nth 4 syntax-state-of-match)) ; comment
+            (throw 'done t)))))))
+
 (defun groovy-indent-line ()
   "Indent the current line according to the number of parentheses."
   (interactive)
@@ -872,17 +905,18 @@ Then this function returns (\"def\" \"if\" \"switch\")."
                             (not has-closing-paren))))
               (setq indent-level (1+ indent-level)))))
 
-        ;; If previous lines are block statements with optional
-        ;; parens, indent for each block.
+        ;; If the previous lines are block statements (e.g., if, for, while, else)
+	;; with optional parens, then indent for each block.
         (save-excursion
-          (let* ((prev-line (groovy--prev-code-line))
-                 (block-pattern (rx (0+ space) symbol-start (or "if" "for" "while" "else") symbol-end)))
-            (while (and prev-line
-                        (s-matches-p block-pattern prev-line))
+	  (let (prev-line)
+
+	    ;; Loop backwards using groovy--prev-code-lineuntil we hit
+	    ;; a line that does not contain a block statement.
+	    (while (and (setq prev-line
+			      (groovy--prev-code-line))
+			(groovy--line-contains-block-statements-p))
               (unless (s-ends-with-p "{" (s-trim prev-line))
-                (setq indent-level (1+ indent-level)))
-              ;; Keey moving up until we hit a line that isn't a block statement.
-              (setq prev-line (groovy--prev-code-line)))))
+                (setq indent-level (1+ indent-level))))))
 
         ;; If this line is .methodCall() then we should indent one
         ;; more level.
