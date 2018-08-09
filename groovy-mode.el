@@ -786,13 +786,13 @@ Then this function returns (\"def\" \"if\" \"switch\")."
         (unless (s-blank-str-p code-text)
           (throw 'done code-text))))))
 
- (defun groovy--line-contains-block-statements-p ()
+(defun groovy--line-contains-block-statements-p ()
   "Returns t if the current line contains a block statement keyword like if, for, while, else."
   (save-excursion
     (goto-char (line-beginning-position))
     (let* ((pattern
-	    (rx (0+ space) symbol-start (or "if" "for" "while" "else") symbol-end))
-	   (limit (line-end-position))
+            (rx (0+ space) symbol-start (or "if" "for" "while" "else") symbol-end))
+           (limit (line-end-position))
            current-match
            syntax-state-of-match)
       ;; Search entire line for one of the keywords. If we find
@@ -800,19 +800,19 @@ Then this function returns (\"def\" \"if\" \"switch\")."
       ;; throw true. Otherwise, if no match is found, throw false
       (catch 'done
         (while t
-	  ;; Get the next match
+          ;; Get the next match
           (setq current-match
                 (re-search-forward pattern limit t 1))
-	  
+
           ;; Return nil if no more matches are found.
           (unless current-match
             (throw 'done nil))
-	  
+
           ;; Get the syntax state of the matching keyword.
           (save-excursion
             (setq syntax-state-of-match
                   (syntax-ppss (match-beginning 0))))
-	  
+
           ;; Unless the match is inside a string or comment,
           ;; it's a valid match and we should return true.
           (unless (or (nth 3 syntax-state-of-match) ; string
@@ -905,16 +905,16 @@ Then this function returns (\"def\" \"if\" \"switch\")."
                             (not has-closing-paren))))
               (setq indent-level (1+ indent-level)))))
 
-        ;; If the previous lines are block statements (e.g., if, for, while, else)
-	;; with optional parens, then indent for each block.
+        ;; If the previous lines are block statements (e.g., if, for, while,
+        ;;  else) without the optional curly brace, then indent for each block.
         (save-excursion
-	  (let (prev-line)
+          (let (prev-line)
 
-	    ;; Loop backwards using groovy--prev-code-lineuntil we hit
-	    ;; a line that does not contain a block statement.
-	    (while (and (setq prev-line
-			      (groovy--prev-code-line))
-			(groovy--line-contains-block-statements-p))
+            ;; Loop backwards using groovy--prev-code-line until we hit
+            ;; a line that does not contain a block statement.
+            (while (and (setq prev-line
+                              (groovy--prev-code-line))
+                        (groovy--line-contains-block-statements-p))
               (unless (s-ends-with-p "{" (s-trim prev-line))
                 (setq indent-level (1+ indent-level))))))
 
