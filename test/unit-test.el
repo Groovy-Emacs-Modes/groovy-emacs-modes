@@ -52,7 +52,12 @@ def foo = true")
   (should-preserve-indent
    "
 // if for while else
-def foo = true"))
+def foo = true")
+  ;; Strings containing keywords should not affect indentation.
+  (should-preserve-indent
+   "
+def foo = 'if for while else'
+def bar = true"))
 
 (ert-deftest groovy-indent-optional-braces ()
   "We should indent block statements even if they don't have braces."
