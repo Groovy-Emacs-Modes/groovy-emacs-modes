@@ -26,6 +26,13 @@
     `(let ((,src-sym ,source))
        (should-indent-to ,src-sym ,src-sym))))
 
+(ert-deftest groovy-shebang ()
+  "Handle shebang line."
+  ;; http://docs.groovy-lang.org/latest/html/documentation/core-syntax.html#_shebang_line
+  (should-preserve-indent
+   "#!/usr/bin/env groovy
+println 'Hello from the shebang line'"))
+
 (ert-deftest groovy-indent-function ()
   "We should indent according to the number of parens."
   (should-indent-to
