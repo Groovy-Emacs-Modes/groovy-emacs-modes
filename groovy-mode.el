@@ -770,7 +770,7 @@ Then this function returns (\"def\" \"if\" \"switch\")."
     ;; Return the part of the line that isn't a comment (may be nil).
     code-text))
 
-(defun groovy--prev-code-line ()
+(defun groovy--backwards-to-prev-code-line ()
   "Move point to the previous non-comment line, and return its contents."
   (catch 'done
     (let (code-text)
@@ -786,38 +786,31 @@ Then this function returns (\"def\" \"if\" \"switch\")."
         (unless (s-blank-str-p code-text)
           (throw 'done code-text))))))
 
-(defun groovy--line-contains-block-statements-p ()
-  "Returns t if the current line contains a block statement keyword like if, for, while, else."
-  (save-excursion
-    (goto-char (line-beginning-position))
-    (let* ((pattern
-            (rx (0+ space) symbol-start (or "if" "for" "while" "else") symbol-end))
-           (limit (line-end-position))
-           current-match
-           syntax-state-of-match)
-      ;; Search entire line for one of the keywords. If we find
-      ;; the keyword and it is NOT inside a string or comment, 
-      ;; throw true. Otherwise, if no match is found, throw false
-      (catch 'done
-        (while t
-          ;; Get the next match
-          (setq current-match
-                (re-search-forward pattern limit t 1))
+(defun groovy--line-ends-with-incomplete-block-statement-p ()
+  "Return t if the current line ends with an incomplete block
+statement, without an open curly brace."
+  (unless (groovy--in-string-p)
+    (save-excursion
+      (end-of-line)
+      ;; Search backwards until we are no longer in a comment.
+      (while (and (not (bolp)) (groovy--comment-p (point)))
+        (re-search-backward "/[/*]" (line-beginning-position) t))
+      (unless (groovy--comment-p (point))
+        (skip-chars-backward (rx blank))
+        ;; We should be at the end of the actual code line. We are looking
+        ;; for a line that ends with either if|while|for followed by
+        ;; (condition), or a lone else.
+        (if (eq (char-before) ?\))
+            (when (condition-case nil (progn (backward-sexp) t) (scan-error nil))
+              (skip-chars-backward (rx blank))
+              (string-match (rx symbol-start (group (or "if" "for" "while")) line-end)
+                            (buffer-substring-no-properties (line-beginning-position) (point))))
+          (string-match (rx symbol-start "else" line-end)
+                        (buffer-substring-no-properties (line-beginning-position) (point))))))))
 
-          ;; Return nil if no more matches are found.
-          (unless current-match
-            (throw 'done nil))
-
-          ;; Get the syntax state of the matching keyword.
-          (save-excursion
-            (setq syntax-state-of-match
-                  (syntax-ppss (match-beginning 0))))
-
-          ;; Unless the match is inside a string or comment,
-          ;; it's a valid match and we should return true.
-          (unless (or (nth 3 syntax-state-of-match) ; string
-                      (nth 4 syntax-state-of-match)) ; comment
-            (throw 'done t)))))))
+(defun groovy--trim-current-line ()
+  "Return the current code line trimmed and without comments."
+  (s-trim (groovy--remove-comments (groovy--current-line))))
 
 (defun groovy-indent-line ()
   "Indent the current line according to the number of parentheses."
@@ -887,7 +880,7 @@ Then this function returns (\"def\" \"if\" \"switch\")."
         ;; If the previous line ended with an arithmetic operator like
         ;; `foo +`, then this line should be indented one more level.
         (save-excursion
-          (let* ((prev-line (groovy--prev-code-line))
+          (let* ((prev-line (groovy--backwards-to-prev-code-line))
                  (line-end (line-end-position))
                  ;; Check if the last thing is a slashy-string end, so we
                  ;; distinguish a string `/foo bar/` from arithmetic `x /`.
@@ -905,19 +898,32 @@ Then this function returns (\"def\" \"if\" \"switch\")."
                             (not has-closing-paren))))
               (setq indent-level (1+ indent-level)))))
 
-        ;; If the previous lines are block statements (e.g., if, for, while,
-        ;;  else) without the optional curly brace, then indent for each block.
+        ;; If the previous lines are block statements (if, for, while, else)
+        ;; without the optional curly brace and without a body, then indent
+        ;; for each block.
         (save-excursion
-          (let (prev-line)
-
-            ;; Loop backwards using groovy--prev-code-line until we hit
-            ;; a line that does not contain a block statement.
-            (while (and (setq prev-line
-                              (groovy--prev-code-line))
-                        (groovy--line-contains-block-statements-p))
-              (unless (s-ends-with-p "{" (s-trim prev-line))
-                (setq indent-level (1+ indent-level))))))
-
+          (let (next-line)
+            (while
+                (and
+                 (setq line-after (groovy--trim-current-line))
+                 (groovy--backwards-to-prev-code-line)
+                 
+                 ;; Handle the special case of a chain of if-else statements, e.g.
+                 ;;   if (x) foo()
+                 ;;   else if (y) bar()
+                 ;;   else baz()
+                 (progn
+                   (while
+                       (let ((cur-line (groovy--trim-current-line)))
+                         (and (s-starts-with-p "else" line-after)
+                              (string-match (rx line-start (optional "else" (+ blank)) "if" symbol-end) cur-line)
+                              (groovy--backwards-to-prev-code-line)
+                              (setq line-after cur-line))))
+                   t)
+                 
+                 (groovy--line-ends-with-incomplete-block-statement-p))
+                (setq indent-level (1+ indent-level)))))
+        
         ;; If this line is .methodCall() then we should indent one
         ;; more level.
         (when (s-starts-with-p "." current-line)
