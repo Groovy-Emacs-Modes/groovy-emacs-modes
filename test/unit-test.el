@@ -59,54 +59,133 @@ def foo = true")
 def foo = 'if for while else'
 def bar = true"))
 
-(ert-deftest groovy-indent-optional-braces ()
-  "We should indent block statements even if they don't have braces."
-  ;; Basic block keywords.
+(ert-deftest groovy-indent-braceless-while ()
+  "Indent the body of a braceless while statement."
   (should-preserve-indent
    "
 while (true)
-    foo()")
+    foo()"))
+
+(ert-deftest groovy-indent-braceless-for ()
+  "Indent the body of a braceless for statement."
   (should-preserve-indent
    "
 for (i = 0; i < 10; i++)
-    foo()")
-  ;; If and else.
+    foo()"))
+
+(ert-deftest groovy-indent-braceless-if-else ()
+  "Indent the body of braceless if/else statements."
   (should-preserve-indent
    "
 if (true)
     foo()
 else
-    bar()")
-  ;; Consider the previous statement if it's also a block statement.
+    bar()"))
+
+(ert-deftest groovy-indent-braceless-if-nested ()
+  "Indent nested braceless if statements."
   (should-preserve-indent
    "
 if (true)
     if (true)
-        foo()")
-  ;; Ignore the previous statement otherwise.
+        foo()"))
+
+(ert-deftest groovy-do-not-indent-following-oneliner-if-braceless ()
+  "Don't indent the line following a oneliner if statement."
+  (should-preserve-indent
+   "
+if (x) bar()
+foo()"))
+
+(ert-deftest groovy-do-not-indent-following-oneliner-if-braced ()
+  "Don't indent the line following a oneliner if statement."
+  (should-preserve-indent
+   "
+if (x) { bar() }
+foo()"))
+
+(ert-deftest groovy-indent-braceless-if-line-before ()
+  "Don't indent the line before a braceless if statement."
   (should-preserve-indent
    "
 bar()
 if (true)
-    foo()")
-  ;; The subsequent line should not be indented.
+    foo()"))
+
+(ert-deftest groovy-indent-braceless-if-line-after ()
+  "Don't indent the line after the body of a braceless if statement."
   (should-preserve-indent
    "
 if (true)
     foo()
-bar()")
-  ;; Don't get confused by comments.
+bar()"))
+
+(ert-deftest groovy-indent-braceless-if-with-comment ()
+  "Correctly indent the body of braceless if/else statements with a comment in between."
   (should-preserve-indent
    "
 if (true)
     // stuff
-    foo()")
-  ;; Proceed as normal if we do actually have braces.
+    foo()"))
+
+(ert-deftest groovy-indent-braceless-while-trailing-ws ()
+  "Indent the body of a braceless while statement with trailing whitespace."
+  (should-preserve-indent
+   "
+while (true)\t\t
+    foo()"))
+
+(ert-deftest groovy-indent-if-with-braces ()
+  "Correctly indent the body of a braced if statement."
   (should-preserve-indent
    "
 if (true) {
     foo()
 }"))
+
+(ert-deftest groovy-indent-if-body-else-no-body ()
+  "Correctly indent if-else when if has a body but else doesn't."
+  (should-preserve-indent
+   "
+if (x) foo() else
+    bar()"))
+
+(ert-deftest groovy-indent-indented-if-followed-by-else-on-next-line ()
+  "Correctly indent indented if followed by else on the next line."
+  (should-preserve-indent
+   "
+while (true)
+    if (x) foo()
+    else bar()"))
+
+(ert-deftest groovy-indent-while-if-if-else-chain ()
+  "Correctly indent block statement if followed by another if-else."
+  (should-preserve-indent
+   "
+while (true)
+    if (x) foo()
+
+if (y) bar()
+else baz()
+"))
+
+(ert-deftest groovy-indent-complex-block-statements ()
+  "Correctly indent complex block statements."
+  (should-preserve-indent
+   "
+while (a)
+
+    if (b) c()
+    else if (d) e()
+    else while (f)
+        for (;;)
+            if (g)
+                if (h) i()
+                else if (j) k()
+                else while (l) m()
+
+if (n) m()
+"))
 
 (ert-deftest groovy-indent-infix-operator ()
   "We should increase indent after infix operators."
