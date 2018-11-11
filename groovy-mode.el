@@ -763,9 +763,11 @@ Then this function returns (\"def\" \"if\" \"switch\")."
         (setq code-text (buffer-substring start-pos (point)))
 
         ;; Unless we went all the way to the end of the line, we
-        ;; encountered a comment delimiter // or /*. Remove this delimiter.
+        ;; encountered a comment delimiter //, /* or #. Remove this delimiter.
         (unless (= (point) end-pos)
-          (setq code-text (substring code-text 0 -2)))))
+          (let ((delims '("//" "/*" "#")))
+            (setq code-text (replace-regexp-in-string
+                             (rx-to-string `(seq (or ,@delims) line-end)) "" code-text))))))
 
     ;; Return the part of the line that isn't a comment (may be nil).
     code-text))
