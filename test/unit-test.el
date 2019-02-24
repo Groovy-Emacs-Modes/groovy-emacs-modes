@@ -239,6 +239,20 @@ def a = b--+
 def a = b+++
     1"))
 
+(ert-deftest groovy-indent-label ()
+  "We should not increase indent after labels.
+These commonly occur when using the Spock test library for Groovy."
+  (should-preserve-indent
+   "def foo() {
+    label1:
+    bar()
+    baz()
+
+    label2:
+    test()
+    other_function_call()
+}"))
+
 (ert-deftest groovy-indent-after-comma ()
   "We should increase indent after comma at end-of-line. Unless
 we are in a list, see test `groovy-indent-list'."

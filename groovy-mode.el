@@ -674,7 +674,12 @@ dollar-slashy-quoted strings."
      "==" "!=" "<" "<=" ">" ">=" "<<=" ">>=" ">>>=" "&=" "^=" "|="
      "&&" "||"
      "&" "|" "^" "<<" "<<<" ">>" ">>>"
-     "?" "?:" ":"
+     "?" "?:"
+     ;; Kludge: require a space before :. This enables us to
+     ;; distinguish labels from ternary calls. Strictly speaking,
+     ;; Groovy does not require a space before :, instead it seems to
+     ;; look for a preceding ?.
+     " :"
      "=~" "==~"
      "<=>" "<>"
      "in" "as")
