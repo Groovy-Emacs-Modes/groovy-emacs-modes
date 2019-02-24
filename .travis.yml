@@ -20,5 +20,3 @@ matrix:
   fast_finish: true
   allow_failures:
     - env: EVM_EMACS=emacs-git-snapshot-travis
-    - env: EVM_EMACS=emacs-25.3-travis
-    - env: EVM_EMACS=emacs-26.1-travis
