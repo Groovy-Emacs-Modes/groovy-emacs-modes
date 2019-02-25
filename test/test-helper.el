@@ -5,8 +5,8 @@
 (require 'ert)
 (require 'f)
 
-(let ((peval-dir (f-parent (f-dirname (f-this-file)))))
-  (add-to-list 'load-path peval-dir))
+(let ((groovy-mode-dir (f-parent (f-dirname (f-this-file)))))
+  (add-to-list 'load-path groovy-mode-dir))
 
 (require 'undercover)
 (undercover "groovy-mode.el"
