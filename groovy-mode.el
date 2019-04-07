@@ -334,15 +334,15 @@
   (rx (or "++" "--")))
 
 (defun groovy-special-variable-search (limit)
-  "Search for text marked with `groovy-special-variable' to LIMIT."
+  "Search for text marked with `groovy-special-variable' up to LIMIT."
   (groovy-special-prop-search limit 'groovy-special-variable))
 
 (defun groovy-function-name-search (limit)
-  "Search for text marked with `groovy-special-variable' to LIMIT."
+  "Search for text marked with `groovy-special-variable' up to LIMIT."
   (groovy-special-prop-search limit 'groovy-function-name))
 
 (defun groovy-special-prop-search (limit prop-name)
-  "Search until to LIMIT for PROP-NAME text-property."
+  "Search up to LIMIT for text property PROP-NAME."
   (let* ((pos (point))
          (chg (next-single-property-change pos prop-name nil limit)))
     (when (and chg (> chg pos))
@@ -351,7 +351,7 @@
         (set-match-data v)
         (or v (groovy-special-prop-search limit prop-name))))))
 
-(defun groovy--travel-parameritized-types ()
+(defun groovy--travel-parameterized-types ()
   "Pass over <Foo<Bar>> when searching declarations."
   (let ((count 1)
         (found t))
@@ -385,7 +385,7 @@
   (remove-text-properties (point)
                           (or limit (point-max))
                           '(groovy-special-variable nil
-                            groovy-function-name nil))
+                                                    groovy-function-name nil))
   (let ((pos (point))
         (case-fold-search nil)
         (match (re-search-forward groovy-declaration-regexp limit t)))
@@ -395,7 +395,7 @@
            (not (groovy--comment-p (point)))
            (let ((match-s (s-trim (match-string 0))))
              (when (s-ends-with-p "<" match-s)
-               (groovy--travel-parameritized-types))
+               (groovy--travel-parameterized-types))
              (let ((var-match
                     (re-search-forward
                      (rx-to-string `(seq point (* space)
