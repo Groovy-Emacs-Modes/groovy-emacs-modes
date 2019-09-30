@@ -944,7 +944,14 @@ statement, without an open curly brace."
               (switch-count 0))
           (dolist (block-symbol blocks)
             (when (equal block-symbol "switch")
-              (setq switch-count (1+ switch-count))))
+              (setq switch-count (1+ switch-count)))
+            ;; Ensure we indent closures by one extra level.
+            ;;
+            ;; [1, 2, 3]
+            ;;     .findAll { // <- indented
+            (when (s-starts-with-p "." block-symbol)
+              (setq indent-level (1+ indent-level))))
+
           (when (> switch-count 0)
             (setq indent-level (+ indent-level switch-count))
             ;; The `case foo:' line should be indented less than the body.

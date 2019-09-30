@@ -390,6 +390,22 @@ def x = [
     'another element'
 ]"))
 
+(ert-deftest groovy-indent-closure ()
+  "Ensure closures on another line get an additional indent level."
+  (should-preserve-indent "
+[1, 2, 3]
+    .findAll {
+        it % 2 == 0
+    }
+")
+  ;; Check we handle closures even if the line doesn't end with "{".
+  (should-preserve-indent "
+[1, 2, 3]
+    .collect { it ->
+        it + 1
+    }
+"))
+
 (defmacro with-highlighted-groovy (src &rest body)
   "Insert SRC in a temporary groovy-mode buffer, apply syntax highlighting,
 then run BODY."
