@@ -163,10 +163,10 @@
 ;; vars
 (defvar groovy-imenu-regexp
   (list ;; FIXME: removed `groovy-function-regexp', now is using a function.
-        ;;(list "Functions" groovy-function-regexp 2)
-        (list "Classes" groovy-class-regexp 2)
-        (list "Interfaces" groovy-interface-regexp 1)
-        (list "Closures" "def[ \t]+\\([a-zA-Z_][a-zA-Z0-9_]*\\)[ \t]*=[ \t]*{" 1))
+   ;;(list "Functions" groovy-function-regexp 2)
+   (list "Classes" groovy-class-regexp 2)
+   (list "Interfaces" groovy-interface-regexp 1)
+   (list "Closures" "def[ \t]+\\([a-zA-Z_][a-zA-Z0-9_]*\\)[ \t]*=[ \t]*{" 1))
   "Imenu expression for Groovy.")
 
 
@@ -663,7 +663,7 @@ dollar-slashy-quoted strings."
       (or ,@token-list)
       (0+ space)
       line-end))
-    str))
+   str))
 
 (defun groovy--ends-with-infix-p (str)
   "Does STR end with an infix operator?"
@@ -929,7 +929,7 @@ statement, without an open curly brace."
                    t)
                  
                  (groovy--line-ends-with-incomplete-block-statement-p))
-                (setq indent-level (1+ indent-level)))))
+              (setq indent-level (1+ indent-level)))))
         
         ;; If this line is .methodCall() then we should indent one
         ;; more level.
@@ -982,7 +982,7 @@ Key bindings:
   ;; if `groovy-highlight-assignments' add to keyword search.
   (when groovy-highlight-assignments
     (add-to-list 'groovy-font-lock-keywords
-          '(groovy-variable-assignment-search 1 font-lock-variable-name-face) t))
+                 '(groovy-variable-assignment-search 1 font-lock-variable-name-face) t))
   (set (make-local-variable 'font-lock-defaults)
        '(groovy-font-lock-keywords))
 
