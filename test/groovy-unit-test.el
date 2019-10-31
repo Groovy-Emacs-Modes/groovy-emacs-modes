@@ -571,6 +571,12 @@ final int foo = -1;"
     (forward-char -1)
     (should (not (memq 'font-lock-string-face (faces-at-point))))))
 
+(ert-deftest groovy-highlight-slashy-string--comma ()
+  "Allow slashy strings as later arguments."
+  (with-highlighted-groovy "text.replaceAll(abc, /foo/)"
+    (search-forward "foo")
+    (should (memq 'font-lock-string-face (faces-at-point)))))
+
 (ert-deftest groovy-highlight-slashy-string--inner-dollar ()
   "Don't get confused by slashy-strings that contain $."
   (with-highlighted-groovy "x = /$ foo $/"
