@@ -57,5 +57,5 @@ like string interpolation highlighting, compared to the CC Mode based version..
 
 ![screenshot](groovy-mode.png)
 
-You can configure the standalone `groovy-mode` with `M-x customize RET
-groovy-mode RET`.
+You can configure the standalone `groovy-mode` with `M-x customize`,
+and searching for `groovy`.
