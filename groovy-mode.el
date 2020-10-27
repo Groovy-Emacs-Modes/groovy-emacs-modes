@@ -651,6 +651,7 @@ dollar-slashy-quoted strings."
    `(or symbol-end
         space
         (syntax string-quote)
+        (syntax string-delimiter)
         (syntax close-parenthesis)
         (regexp ,groovy-postfix-operator-regex))))
 

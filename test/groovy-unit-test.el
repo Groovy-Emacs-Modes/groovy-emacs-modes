@@ -274,6 +274,12 @@ def func(int a, int b) {
         'arg1',
         'arg2',
     ]
+}")
+  (should-preserve-indent
+   "
+def func(int a, int b) {
+    call_method arg1: /arg1/,
+        arg2: /arg2/
 }"))
 
 (ert-deftest groovy-indent-call-with-comma ()
