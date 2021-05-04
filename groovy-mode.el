@@ -182,6 +182,15 @@
   (save-excursion
     (nth 3 (syntax-ppss pos))))
 
+(defun groovy--preceded-by-odd-number-of-backslashes ()
+  "Return non-nil if point is preceded by an odd number of backslashes."
+  (let ((point (- (point) 2))
+        (slashes 0))
+    (while (eq (char-before point) ?\\)
+      (cl-incf slashes)
+      (cl-decf point))
+    (cl-oddp slashes)))
+
 (defvar groovy-font-lock-keywords
   ;; Annotations are defined with the @interface, which is a keyword:
   ;; http://groovy-lang.org/objectorientation.html#_annotation
@@ -286,8 +295,7 @@
                   (search-forward "${" limit t))
             (let* ((string-delimiter-pos (nth 8 (syntax-ppss)))
                    (string-delimiter (char-after string-delimiter-pos))
-                   (escaped-p (eq (char-before (- (point) 2))
-                                  ?\\)))
+                   (escaped-p (groovy--preceded-by-odd-number-of-backslashes)))
               (when (and (groovy--in-string-p)
                          ;; Interpolation does not apply in single-quoted strings.
                          (not (eq string-delimiter ?'))
