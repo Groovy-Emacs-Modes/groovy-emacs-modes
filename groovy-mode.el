@@ -295,7 +295,8 @@
                   (search-forward "${" limit t))
             (let* ((string-delimiter-pos (nth 8 (syntax-ppss)))
                    (string-delimiter (char-after string-delimiter-pos))
-                   (escaped-p (groovy--preceded-by-odd-number-of-backslashes)))
+                   (escaped-p (and (not (eq string-delimiter ?/))
+                                   (groovy--preceded-by-odd-number-of-backslashes))))
               (when (and (groovy--in-string-p)
                          ;; Interpolation does not apply in single-quoted strings.
                          (not (eq string-delimiter ?'))

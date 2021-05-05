@@ -533,6 +533,23 @@ then run BODY."
     (search-forward "f")
     (should (equal '(font-lock-string-face) (faces-at-point)))))
 
+(ert-deftest groovy-highlight-interpolation-slashy-string ()
+  "Ensure we highlight interpolation in slashy strings."
+  (with-highlighted-groovy "x = /$foo/"
+    (search-forward "$")
+    (should (memq 'font-lock-variable-name-face (faces-at-point))))
+  (with-highlighted-groovy "x = /$foo$bar/"
+    (search-forward "b")
+    (should (memq 'font-lock-variable-name-face (faces-at-point))))
+  (with-highlighted-groovy "x = /${foo}/"
+    (search-forward "f")
+    (should (memq 'font-lock-variable-name-face (faces-at-point))))
+  ;; Only forward slashes actually get escaped in slashy strings, otherwise
+  ;; backslashes are literal.
+  (with-highlighted-groovy "x = /${foo}\\${bar}/"
+    (search-forward "b")
+    (should (memq 'font-lock-variable-name-face (faces-at-point)))))
+
 (ert-deftest groovy-highlight-comments ()
   "Ensure we do not confuse comments with slashy strings."
   (with-highlighted-groovy "// foo"
