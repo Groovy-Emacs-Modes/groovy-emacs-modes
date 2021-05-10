@@ -1004,7 +1004,9 @@ Key bindings:
        groovy-syntax-propertize-function)
   (setq imenu-generic-expression groovy-imenu-regexp)
   (set (make-local-variable 'indent-line-function) #'groovy-indent-line)
-  (set (make-local-variable 'comment-start) "//"))
+  (set (make-local-variable 'comment-start) "//")
+  (set (make-local-variable 'comment-start-skip)
+       (rx (or "//" "/*" "/**" "/**@") (zero-or-more space))))
 
 (provide 'groovy-mode)
 
