@@ -64,8 +64,6 @@
 ;;;###autoload
 (add-to-list 'auto-mode-alist '("\\.g\\(?:ant\\|roovy\\|radle\\)\\'" . groovy-mode))
 ;;;###autoload
-(add-to-list 'auto-mode-alist '("Jenkinsfile" . groovy-mode))
-;;;###autoload
 (add-to-list 'interpreter-mode-alist '("groovy" . groovy-mode))
 
 ;; Regexp Constants
