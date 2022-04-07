@@ -143,7 +143,7 @@ in `grails-root-file-find-process')")
   ;; find root of project
   ;; TODO should also check for grails-app directory
   (setq grails-project-root
-		(locate-dominating-file default-directory "build.xml"))
+		(locate-dominating-file default-directory "build.gradle"))
 
   ;; get a list of all the relevant files
   (setq grails-project-files-list
