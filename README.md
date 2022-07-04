@@ -32,6 +32,8 @@ Alternatively, if you just want stable releases:
 (package-initialize)
 ```
 
+You can now use `M-x list-packages` to find groovy-mode and install it.
+
 ## A Bit of History
 
 This mode was originally developed as a derived mode of `java-mode` (a derived mode of `cc-mode`) inspired
