@@ -1,4 +1,4 @@
-;;; inf-groovy.el — inferior Groovy mode – groovy process in a buffer
+;;; inf-groovy.el --- inferior Groovy mode – groovy process in a buffer
 
 ;;; Inferior Groovy Mode – groovy process in a buffer.
 ;;;                      adapted from cmuscheme.el and inf-haskell.el
@@ -61,7 +61,7 @@
 ;; (4) execute
 ;;      M-x run-groovy
 
-;;; Commentary
+;;; Commentary:
 
 ;;; Bugs:
 ;;  Bug tracking is currently handled using the GitHub issue tracker at
@@ -87,7 +87,7 @@
 (require 'comint)
 (require 'compile)
 (require 'groovy-mode)
-
+(require 'cc-cmds)
 
 (defcustom groovysh
   (or
@@ -97,18 +97,21 @@
    (executable-find
     (format "%s/bin/groovysh" (or (getenv "GROOVY_HOME") ""))))
   "The path to the groovysh binary, used by `run-groovy'."
+  :type 'string
   :group 'groovy)
 
 (defcustom groovysh-args
   "--color=false"
-  "Arguments passed to groovysh when starting an inferior groovy buffer.")
+  "Arguments passed to groovysh when starting an inferior groovy buffer."
+  :type 'string
+  :group 'groovy)
 
 ;;;; for groovy
 (defvar inferior-groovy-first-prompt-pattern "^groovy:.*> *"
-  "first prompt regex pattern of groovy interpreter.")
+  "First prompt regex pattern of groovy interpreter.")
 
 (defvar inferior-groovy-prompt-pattern "^groovy:.*> *"
-  "prompt regex pattern of groovy interpreter.")
+  "Prompt regex pattern of groovy interpreter.")
 
 ;;
 ;; mode variables
@@ -117,7 +120,7 @@
   "*Hook for customising inferior-groovy mode.")
 
 (defvar inferior-groovy-mode-map nil
-  "*Mode map for inferior-groovy-mode")
+  "*Mode map for inferior-groovy-mode.")
 
 (defconst inferior-groovy-error-regexp-alist
        '(("SyntaxError: compile error\n^\\([^\(].*\\):\\([1-9][0-9]*\\):" 1 2)
@@ -131,7 +134,7 @@
 
 ;;;###autoload
 (defun inf-groovy-keys ()
-  "Set local key defs for inf-groovy in groovy-mode"
+  "Set local key defs for inf-groovy in `groovy-mode'."
   (define-key groovy-mode-map "\M-\C-x" 'groovy-send-definition)
   (define-key groovy-mode-map "\C-x\C-e" 'groovy-send-last-sexp)
   (define-key groovy-mode-map "\C-c\M-d" 'groovy-send-definition)
@@ -142,7 +145,7 @@
   (define-key groovy-mode-map "\C-c\C-l" 'groovy-load-file)
   (define-key groovy-mode-map "\C-c\C-s" 'run-groovy))
 
-(defvar groovy-buffer nil "current groovy (actually groovysh) process buffer.")
+(defvar groovy-buffer nil "Current groovy (actually groovysh) process buffer.")
 
 ;;;###autoload
 (defun inferior-groovy-mode ()
@@ -151,21 +154,21 @@
 The following commands are available:
 \\{inferior-groovy-mode-map}
 
-A groovy process can be fired up with M-x run-groovy.
+A groovy process can be fired up with \\[run-groovy].
 
-Customisation: Entry to this mode runs the hooks on comint-mode-hook and
-inferior-groovy-mode-hook (in that order).
+Customisation: Entry to this mode runs the hooks on
+`comint-mode-hook' and `inferior-groovy-mode-hook' (in that order).
 
 You can send text to the inferior groovy process from other buffers containing
 Groovy source.
-    switch-to-groovy switches the current buffer to the groovy process buffer.
-    groovy-send-definition sends the current definition to the groovy process.
-    groovy-send-region sends the current region to the groovy process.
+    `switch-to-groovy' switches the current buffer to the groovy process buffer.
+    `groovy-send-definition' sends the current definition to the groovy process.
+    `groovy-send-region' sends the current region to the groovy process.
 
-    groovy-send-definition-and-go, groovy-send-region-and-go,
+    `groovy-send-definition-and-go', `groovy-send-region-and-go',
         switch to the groovy process buffer after sending their text.
 For information on running multiple processes in multiple buffers, see
-documentation for variable groovy-buffer.
+documentation for variable `groovy-buffer'.
 
 Commands:
 Return after the end of the process' output sends the text from the
@@ -175,7 +178,8 @@ Return before the end of the process' output copies the sexp ending at point
 Delete converts tabs to spaces as it moves back.
 Tab indents for groovy; with argument, shifts rest
     of expression rigidly with the current line.
-C-M-q does Tab on each line starting within following expression.
+\\<groovy-mode-map>
+\\[prog-indent-sexp] does Tab on each line starting within following expression.
 Paragraphs are separated only by blank lines.  # start comments.
 If you accidentally suspend your process, use \\[comint-continue-subjob]
 to continue it."
@@ -209,12 +213,12 @@ Defaults to a regexp ignoring all inputs of 0, 1, or 2 letters.")
     (comint-send-string proc "\n")))
 
 (defun groovy-input-filter (str)
-  "Don't save anything matching inferior-groovy-filter-regexp"
+  "Don't save anything matching `inferior-groovy-filter-regexp'."
   (not (string-match inferior-groovy-filter-regexp str)))
 
 ;; adapted from replace-in-string in XEmacs (subr.el)
 (defun remove-in-string (str regexp)
-  "Remove all matches in STR for REGEXP and returns the new string."
+  "Remove all matches in STR for REGEXP and return the new string."
   (let ((rtn-str "") (start 0) match prev-start)
     (while (setq match (string-match regexp str start))
       (setq prev-start start
@@ -223,7 +227,7 @@ Defaults to a regexp ignoring all inputs of 0, 1, or 2 letters.")
     (concat rtn-str (substring str start))))
 
 (defun groovy-get-old-input ()
-  "Snarf the sexp ending at point"
+  "Snarf the sexp ending at point."
   (save-excursion
     (let ((end (point)))
       (re-search-backward inferior-groovy-first-prompt-pattern)
@@ -272,7 +276,7 @@ process buffer for a list of commands."
 
 
 (defun groovy-proc ()
-  "Returns the current groovy process. See variable groovy-buffer."
+  "Return the current groovy process.  See variable `groovy-buffer'."
   (let ((proc (get-buffer-process (if (eq major-mode 'inferior-groovy-mode)
                                       (current-buffer)
                                     groovy-buffer))))
@@ -338,7 +342,7 @@ With argument, positions cursor at end of buffer."
   (interactive "P")
   (if (get-buffer groovy-buffer)
       (pop-to-buffer groovy-buffer)
-    (error "No current process buffer. See variable groovy-buffer."))
+    (error "No current process buffer, see variable `groovy-buffer'"))
   (cond (eob-p
          (push-mark)
          (goto-char (point-max)))))
