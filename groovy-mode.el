@@ -8,6 +8,7 @@
 ;; Maintainer:  Russel Winder <russel@winder.org.uk>
 ;; Created: 2006-08-01
 ;; Keywords: languages
+;; URL: https://github.com/Groovy-Emacs-Modes/groovy-emacs-modes
 ;; Version: 2.2
 ;; Package-Requires: ((s "1.12.0") (emacs "24.3") (dash "2.13.0"))
 
@@ -37,6 +38,8 @@
 
 ;;; Notes:
 ;;  Should we support GString / template markup ( e.g. `<%' and `%>') specially?
+
+;;; Commentary:
 
 ;;; Code:
 
@@ -125,7 +128,7 @@
               "void")
              symbol-end
              (? "[]")))))))
-  "Matches declarations of the type 'def FooBar<?>'.")
+  "Matches declarations of the type `def FooBar<?>'.")
 
 (defconst groovy-symbol-regexp
   (rx
@@ -141,7 +144,7 @@
      (* space)
      "="
      (not (any "~" "="))))
-  "Matches variable assignments of the type 'a = 1'.")
+  "Matches variable assignments of the type `a = 1'.")
 
 (defconst groovy-class-regexp
   "^[ \t\n\r]*\\(final\\|abstract\\|public\\|[ \t\n\r]\\)*class[ \t\n\r]+\\([a-zA-Z0-9_$]+\\)[^;{]*{"
@@ -641,7 +644,8 @@ dollar-slashy-quoted strings."
 
 (defcustom groovy-indent-offset 4
   "Indentation amount for Groovy."
-  :safe #'integerp
+  :type 'natnum
+  :safe #'natnump
   :group 'groovy)
 
 (defcustom groovy-highlight-assignments nil
@@ -739,13 +743,14 @@ Then this function returns (\"def\" \"if\" \"switch\")."
       ":"))
 
 (defun groovy--remove-comments (src)
-  "Remove all comments from a string of groovy source code."
+  "Remove all comments from a string SRC of groovy source code."
   (->> src
        (replace-regexp-in-string (rx "/*" (*? anything) "*/") "")
        (replace-regexp-in-string (rx "//" (* not-newline)) "")))
 
 (defun groovy--effective-paren-depth (pos)
-  "Return the paren depth of position POS, but ignore repeated parens on the same line."
+  "Return the indentation paren depth of position POS.
+Only one opening paren per source code line is counted."
   (let ((paren-depth 0)
         (syntax (syntax-ppss pos))
         (current-line (line-number-at-pos pos)))
@@ -919,12 +924,12 @@ statement, without an open curly brace."
         ;; without the optional curly brace and without a body, then indent
         ;; for each block.
         (save-excursion
-          (let (next-line)
+          (let (next-line line-after)
             (while
                 (and
                  (setq line-after (groovy--trim-current-line))
                  (groovy--backwards-to-prev-code-line)
-                 
+
                  ;; Handle the special case of a chain of if-else statements, e.g.
                  ;;   if (x) foo()
                  ;;   else if (y) bar()
@@ -937,10 +942,10 @@ statement, without an open curly brace."
                               (groovy--backwards-to-prev-code-line)
                               (setq line-after cur-line))))
                    t)
-                 
+
                  (groovy--line-ends-with-incomplete-block-statement-p))
               (setq indent-level (1+ indent-level)))))
-        
+
         ;; If this line is .methodCall() then we should indent one
         ;; more level.
         (when (s-starts-with-p "." current-line)
